@@ -1,0 +1,19 @@
+[project]
+name = "chicago-crimes"
+version = "0.1.0"
+description = "Predictive Policing in Chicago"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.119.0",
+    "scikit-learn>=1.7.2",
+    "uvicorn>=0.37.0",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.0.0",
+    "pandas>=2.3.3",
+    "python-dotenv>=1.1.1",
+    "sodapy>=2.2.0",
+]
