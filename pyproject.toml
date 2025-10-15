@@ -1,7 +1,7 @@
 [project]
 name = "chicago-crimes"
 version = "0.1.0"
-description = "Predictive Policing in Chicago"
+description = "chicago-crimes-classifier"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -15,6 +15,18 @@ dependencies = [
 dev = [
     "ipykernel>=7.0.0",
     "pandas>=2.3.3",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
     "python-dotenv>=1.1.1",
     "sodapy>=2.2.0",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+packages = ["src/chicago_crimes"]
+
+[project.scripts]
+train-model = "chicago_crimes.training.train_model:main"
