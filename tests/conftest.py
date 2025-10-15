@@ -2,8 +2,7 @@
 import pytest
 import pandas as pd
 import numpy as np
-from unittest.mock import Mock, MagicMock
-from datetime import datetime
+from unittest.mock import MagicMock
 
 @pytest.fixture
 def sample_dataframe():
