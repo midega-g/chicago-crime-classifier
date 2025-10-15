@@ -160,6 +160,43 @@ def test_evaluate_model(self, mock_trained_pipeline, capsys):
 
 The evaluation tests use controlled mock predictions to validate metric calculation accuracy and output formatting consistency. The test ensures that AUC-ROC scores fall within valid ranges (0 to 1) and that all expected metrics are included in the returned dictionary. The output capture validation ensures that evaluation results are properly formatted for human consumption while maintaining programmatic access to metric values.
 
+## Integration Testing and End-to-End Validation
+
+The `test_integration.py` module provides comprehensive end-to-end testing that validates the complete machine learning pipeline from raw data ingestion through final prediction output. Integration testing addresses the critical gaps between unit tests by ensuring that individual components work correctly when combined into complete workflows.
+
+```python
+class TestIntegration:
+    
+    def test_end_to_end_feature_processing(self, sample_dataframe, mock_location_mapping):
+        """Test the complete feature processing pipeline."""
+        # Test data loading and preparation
+        processed_df = prepare_features(sample_dataframe.copy(), mock_location_mapping)
+        
+        # Test feature engineering
+        X, y = create_features_target(processed_df)
+        
+        # Test class weight computation
+        sample_weights = compute_class_weights(y)
+        
+        # Assertions
+        assert not X.empty
+        assert len(y) == len(processed_df)
+        assert isinstance(sample_weights, dict)
+        assert 0 in sample_weights
+        assert 1 in sample_weights
+        
+        # Check that all expected feature columns are present
+        expected_features = ['primary_type', 'domestic', 'district', 'hour']
+        for feature in expected_features:
+            assert feature in X.columns
+```
+
+Integration testing validates the data flow between components, ensuring that the output of one module serves as appropriate input for the next module in the pipeline. This testing approach catches interface mismatches, data type inconsistencies, and feature engineering errors that might not be apparent when testing individual components in isolation. The end-to-end validation ensures that the complete feature processing pipeline produces the expected data structures and statistical properties required for successful model training.
+
+The integration tests use the same fixture infrastructure as unit tests but combine multiple processing steps to validate complete workflows. This approach enables detection of subtle bugs that emerge from component interactions, such as feature name mismatches between data loading and feature engineering phases, or data type incompatibilities between feature engineering and model training components.
+
+Integration testing also serves as regression testing for the complete pipeline, ensuring that modifications to individual components do not break the overall system functionality. The comprehensive validation approach provides confidence that the machine learning pipeline will function correctly in production environments where all components must work together seamlessly to process real crime data and generate accurate arrest predictions.
+
 ## Test Execution and Continuous Integration
 
 The testing framework integrates with standard Python testing tools and continuous integration systems through pytest configuration and standardized test discovery patterns. The test execution strategy enables both individual test module execution and comprehensive test suite validation.

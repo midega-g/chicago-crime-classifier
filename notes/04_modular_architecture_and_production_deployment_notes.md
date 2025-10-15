@@ -160,6 +160,63 @@ def save_model(pipeline, model_path=None):
 
 The pipeline approach ensures that all preprocessing steps (dictionary vectorization) and model training occur in a coordinated manner, preventing the train-test skew that can occur when preprocessing steps are applied inconsistently. The automatic integration of class weights into the XGBoost configuration demonstrates how the modular design enables sophisticated machine learning techniques to be applied consistently without requiring detailed knowledge of the underlying algorithms from calling code.
 
+## Model Evaluation and Performance Assessment
+
+The `model_evaluator.py` module provides standardized performance assessment capabilities that ensure consistent evaluation across different models and datasets. This module abstracts the complexities of machine learning evaluation metrics while providing comprehensive reporting that supports both technical analysis and business decision-making.
+
+```python
+def evaluate_model(pipeline, X_dict, y_true, dataset_name="Validation"):
+    """Evaluate model performance and return metrics."""
+    y_pred_proba = pipeline.predict_proba(X_dict)[:, 1]
+    y_pred = pipeline.predict(X_dict)
+    
+    auc_score = roc_auc_score(y_true, y_pred_proba)
+    classification_rep = classification_report(y_true, y_pred)
+    
+    print(f"{dataset_name} AUC-ROC: {auc_score:.4f}")
+    print(f"\nClassification Report ({dataset_name}):\n{classification_rep}")
+    
+    return {
+        'auc_score': auc_score,
+        'y_pred_proba': y_pred_proba,
+        'y_pred': y_pred,
+        'classification_report': classification_rep
+    }
+```
+
+The evaluation function demonstrates the principle of separation of concerns by focusing exclusively on performance assessment without coupling to specific model types or training procedures. The function accepts any scikit-learn compatible pipeline and produces standardized metrics that enable comparison across different modeling approaches. The dual output approach provides both human-readable console output for immediate feedback and structured return values for programmatic analysis and logging.
+
+The AUC-ROC metric selection reflects the specific requirements of imbalanced binary classification problems where ranking quality matters more than calibrated probabilities. The classification report provides detailed precision, recall, and F1-score breakdowns that enable nuanced understanding of model performance across different classes and decision thresholds. The modular design enables easy extension to additional metrics such as precision-recall curves, confusion matrices, or custom business metrics without modifying existing evaluation logic.
+
+## Prediction Interface and Production Deployment
+
+The `predict.py` module serves as the primary interface for applying trained models to new data, providing the critical bridge between model development and operational deployment. This module encapsulates all the preprocessing, feature engineering, and prediction logic required to transform raw crime incident data into arrest probability predictions.
+
+```python
+def predict_new_data(model_path, new_data, location_mapping):
+    """Make predictions on new data."""
+    # Load model
+    pipeline = load_model(model_path)
+
+    # Prepare features (assuming new_data has the same structure as training data)
+    prepared_data = prepare_features(new_data.copy(), location_mapping)
+
+    # Convert to dictionary format
+    features_dict = convert_to_dict_features(prepared_data)
+
+    # Make predictions
+    predictions = pipeline.predict(features_dict)
+    probabilities = pipeline.predict_proba(features_dict)
+
+    return predictions, probabilities
+```
+
+The prediction interface demonstrates the value of the modular architecture by reusing the same feature engineering logic that was applied during training, ensuring consistency between training and prediction phases. This consistency is critical for preventing train-serve skew, a common source of production model failures where differences in preprocessing between training and prediction environments cause performance degradation.
+
+The function returns both binary predictions and probability scores, providing flexibility for different operational use cases. Binary predictions enable direct decision-making for resource allocation, while probability scores support risk-based prioritization and threshold optimization based on current operational constraints. The dual return format accommodates both automated decision systems and human-in-the-loop workflows where probability scores inform but do not replace human judgment.
+
+The prediction module also serves as a template for API development, where the core prediction logic can be wrapped in web service frameworks like FastAPI to provide real-time prediction capabilities. The clean separation between data processing and prediction logic enables easy integration with different deployment architectures, from batch processing systems to real-time streaming applications.
+
 ## Package Configuration and Dependency Management
 
 The `pyproject.toml` file establishes the project as a proper Python package with clearly defined dependencies, build configuration, and executable entry points. This configuration enables the project to be installed in development mode and executed through standardized Python packaging mechanisms.
