@@ -103,3 +103,40 @@ The class imbalance necessitates careful consideration of sampling strategies, e
 The feature engineering process transforms the original 22-column dataset into a focused set of predictive features that balance information content with model tractability. The final feature set includes Primary Type (31 categories), the binary Arrest target, Domestic indicator, District (23 categories), Ward and Community Area for geographic context, FBI Code (26 categories), and the engineered temporal features including hour, day of week, month, quarter, and binary night/weekend flags.
 
 This reduction from high-cardinality raw features to a manageable set of engineered features addresses the curse of dimensionality while preserving the essential information needed for arrest prediction. The approach demonstrates the principle that effective feature engineering often involves strategic information loss—removing noise and redundancy while retaining signal—rather than attempting to preserve every available data point.
+
+## Sample Data Management and Development Workflow
+
+The creation of sample datasets serves multiple purposes in the machine learning development lifecycle. Beyond computational efficiency, these samples enable consistent testing environments, facilitate collaborative development where team members can work with identical subsets, and provide standardized benchmarks for comparing different modeling approaches. The sample files become reference datasets that ensure reproducible results across different development sessions and environments.
+
+During the development phase, working with the complete dataset can be computationally expensive and time-consuming for iterative testing and model validation. The `extract_sample_data.py` script addresses this challenge by creating representative subsets of the test data that maintain the statistical properties of the full dataset while enabling rapid experimentation and validation workflows.
+
+```python
+import pandas as pd
+import os
+
+# Determine the correct path based on current working directory
+if os.path.exists('data/test_2025.csv.gz'):
+    data_dir = 'data'
+else:
+    data_dir = '../data'
+
+# Read the original test data
+test_data = f'{data_dir}/test_2025.csv.gz'
+
+# Read a larger sample first to ensure no overlap
+all_sample = pd.read_csv(test_data, compression='gzip', nrows=1100)
+```
+
+The script implements a strategic sampling approach that creates two distinct, non-overlapping subsets from the test data. The first subset contains 100 rows saved as an uncompressed CSV file, providing a lightweight dataset for rapid prototyping and initial testing. The second subset contains 1,000 rows saved as a compressed CSV file, offering a more substantial sample for thorough validation while remaining computationally manageable.
+
+The path detection mechanism ensures the script functions correctly regardless of the execution context, automatically determining whether it's being run from the project root directory or the scripts subdirectory. This flexibility prevents common path-related errors that occur when scripts are executed from different working directories, making the development workflow more robust and user-friendly.
+
+```python
+# Take first 100 rows for CSV
+sample_100 = all_sample.head(100)
+
+# Take next 1000 rows (completely different from first 100) for compressed CSV
+sample_1000 = all_sample.iloc[100:1100]
+```
+
+The non-overlapping sampling strategy ensures that the two subsets represent different portions of the data, preventing data leakage between development and validation phases. This approach maintains the integrity of the testing process while providing datasets of appropriate sizes for different development needs. The smaller subset enables rapid iteration during feature engineering and model prototyping, while the larger subset provides sufficient data for more comprehensive validation and performance assessment.
