@@ -12,3 +12,7 @@ wheels/
 scribble.*
 todo.md
 *_arrest_predictions.csv
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
