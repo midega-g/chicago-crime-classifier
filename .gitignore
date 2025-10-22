@@ -11,3 +11,4 @@ wheels/
 .env
 scribble.*
 todo.md
+*_arrest_predictions.csv
