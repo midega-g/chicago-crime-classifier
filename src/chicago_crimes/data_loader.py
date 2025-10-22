@@ -30,6 +30,9 @@ def load_location_mapping(mapping_file=None):
 
 def prepare_features(df, location_mapping):
     """Extract temporal features and apply location mapping."""
+    # Preserve ID column if it exists
+    id_col = df['id'].copy() if 'id' in df.columns else None
+    
     # Extract temporal features
     df['hour'] = df['date'].dt.hour
     df['day_of_week'] = df['date'].dt.weekday
@@ -44,6 +47,10 @@ def prepare_features(df, location_mapping):
     df['location_group'] = df['location_description'].map(
         location_mapping).fillna("Unknown/Other")
     df.drop(columns=['date', 'location_description'], inplace=True)
+    
+    # Re-add ID column if it existed
+    if id_col is not None:
+        df['id'] = id_col
 
     return df
 
