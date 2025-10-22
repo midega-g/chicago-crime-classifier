@@ -120,15 +120,15 @@ The `async` keyword enables asynchronous processing of file uploads, allowing th
 
 ### File Validation and Type Checking
 
-File type validation occurs before processing to provide immediate feedback for unsupported formats:
+File type validation occurs before processing to provide immediate feedback for unsupported formats, while also handling cases where no filename is provided:
 
 ```python
 # Validate file type
-if not (file.filename.endswith(".csv") or file.filename.endswith(".csv.gz")):
+if not file.filename or not (file.filename.endswith(".csv") or file.filename.endswith(".csv.gz")):
     raise HTTPException(status_code=400, detail="File must be a CSV (.csv) or gzipped CSV (.csv.gz)")
 ```
 
-The `HTTPException` with status code 400 (Bad Request) returns a user-friendly error message that appears in the web interface.
+The validation logic first checks for the existence of a filename to prevent `AttributeError` when `file.filename` is `None`, then validates the file extension. The `HTTPException` with status code 400 (Bad Request) returns a user-friendly error message that appears in the web interface.
 
 ### Asynchronous File Reading and Format Detection
 
@@ -285,7 +285,7 @@ The template response renders the results page with comprehensive context data. 
 ### Comprehensive Exception Handling
 
 ```python
-except Exception as e:
+except (pd.errors.EmptyDataError, pd.errors.ParserError, ValueError, KeyError, FileNotFoundError) as e:
     return templates.TemplateResponse("results.html", {
         "request": request,
         "error": str(e),
@@ -293,7 +293,7 @@ except Exception as e:
     })
 ```
 
-The exception handler catches any errors during file processing or prediction generation, returning an error page instead of crashing the application. The `str(e)` conversion provides a readable error message for debugging purposes.
+The exception handler employs specific exception types rather than catching all exceptions broadly. This approach handles `pd.errors.EmptyDataError` for empty CSV files, `pd.errors.ParserError` for malformed CSV content, `ValueError` for invalid data processing, `KeyError` for missing expected columns, and `FileNotFoundError` for missing model or mapping files. The targeted exception handling provides more precise error identification while returning an error page instead of crashing the application. The `str(e)` conversion provides a readable error message for debugging purposes.
 
 ### Health Check Endpoint
 
