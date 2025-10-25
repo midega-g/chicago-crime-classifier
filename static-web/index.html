@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicago Crime Arrest Prediction</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h1>Chicago Crime Arrest Prediction System</h1>
+                <p class="subtitle">Advanced machine learning for predictive policing and resource optimization</p>
+                <div class="stats-preview">
+                    <div class="stat-preview">
+                        <span class="stat-number">87%</span>
+                        <span class="stat-label">Accuracy</span>
+                    </div>
+                    <div class="stat-preview">
+                        <span class="stat-number">500K+</span>
+                        <span class="stat-label">Records Trained</span>
+                    </div>
+                    <div class="stat-preview">
+                        <span class="stat-number">Real-time</span>
+                        <span class="stat-label">Predictions</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="info-section">
+                <h3><i class="fas fa-database"></i> Get Chicago Crime Data</h3>
+                <div class="data-source">
+                    <div class="source-info">
+                        <i class="fas fa-city"></i>
+                        <div class="source-text">
+                            <h4>Official Chicago Data Portal</h4>
+                            <p>Download the latest crime incident data from the City of Chicago's official data portal</p>
+                            <a href="https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2" target="_blank" class="data-link">
+                                <i class="fas fa-external-link-alt"></i>
+                                Access Crime Dataset
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="features-info">
+                        <h4><i class="fas fa-chart-line"></i> What You'll Get</h4>
+                        <div class="feature-list">
+                            <div class="feature-item">
+                                <i class="fas fa-bullseye"></i>
+                                <span>Arrest probability predictions</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-traffic-light"></i>
+                                <span>Risk level categorization</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Detailed summary statistics</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="upload-section">
+                <div class="upload-card">
+                    <div class="upload-header">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h2>Upload Crime Data</h2>
+                        <p>Select a CSV file containing crime incident data (Max: 200MB)</p>
+                    </div>
+
+                    <form id="uploadForm">
+                        <div class="file-input-container">
+                            <input type="file" id="fileInput" accept=".csv,.csv.gz" required>
+                            <label for="fileInput" class="file-input-label">
+                                <i class="fas fa-file-csv"></i>
+                                <span>Choose CSV File</span>
+                            </label>
+                        </div>
+                        
+                        <div class="file-info" id="fileInfo" style="display: none;">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="fileName"></span>
+                        </div>
+
+                        <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                            <i class="fas fa-brain"></i>
+                            Predict Arrests
+                        </button>
+                    </form>
+
+                    <div class="loading" id="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Analyzing your data...</p>
+                        <div class="progress-steps">
+                            <div class="step active">
+                                <i class="fas fa-upload"></i>
+                                <span>Uploading</span>
+                            </div>
+                            <div class="step" id="step2">
+                                <i class="fas fa-cogs"></i>
+                                <span>Processing</span>
+                            </div>
+                            <div class="step" id="step3">
+                                <i class="fas fa-brain"></i>
+                                <span>Predicting</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="results" id="results" style="display: none;">
+                        <h3><i class="fas fa-chart-bar"></i> Prediction Results</h3>
+                        <div class="results-grid">
+                            <div class="result-card">
+                                <div class="result-number" id="totalCases">-</div>
+                                <div class="result-label">Total Cases</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-number" id="predictedArrests">-</div>
+                                <div class="result-label">Predicted Arrests</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-number" id="avgProbability">-</div>
+                                <div class="result-label">Avg Probability</div>
+                            </div>
+                            <div class="result-card">
+                                <div class="result-number" id="highRiskCases">-</div>
+                                <div class="result-label">High Risk Cases</div>
+                            </div>
+                        </div>
+                        <button class="reset-btn" onclick="resetForm()">
+                            <i class="fas fa-redo"></i>
+                            Analyze Another File
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; <span id="currentYear"></span> Chicago Crime Prediction System | Powered by Machine Learning</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
