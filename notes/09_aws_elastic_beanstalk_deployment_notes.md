@@ -117,7 +117,7 @@ When your application is no longer needed or when you want to avoid ongoing cost
 eb terminate crime-arrest-classifier-env
 ```
 
-This command safely removes the environment and all its associated resources, including EC2 instances, load balancers, security groups, and auto-scaling configurations. Proper termination prevents unexpected charges and maintains a clean AWS account structure.
+This command safely removes the environment and all its associated resources, including EC2 instances, load balancers, security groups, and auto-scaling configurations. Proper termination prevents unexpected charges and maintains a clean AWS account structure. Also ensure that you login into your AWS console and delete any S3 bucket that might have been created in this case, it's named `elasticbeanstalk-af-south-1-<account-number>`
 
 ## Advantages for ML Deployment
 
