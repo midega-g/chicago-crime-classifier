@@ -1,0 +1,100 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  # Basic file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: ['--maxkb=10240'] # 10MB limit
+      - id: check-merge-conflict
+      - id: debug-statements
+      - id: check-docstring-first
+
+  # Python import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 7.0.0
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--length-sort"]
+
+  # Python code formatting
+  - repo: https://github.com/psf/black
+    rev: 25.9.0
+    hooks:
+      - id: black
+        language_version: python3.12
+
+  # Python linting
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.3.0
+    hooks:
+      - id: flake8
+        args: [
+          "--max-line-length=88",
+          "--extend-ignore=E203,W503",
+          "--exclude=.git,__pycache__,build,dist,.venv"
+        ]
+
+  # Security scanning
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.6
+    hooks:
+      - id: bandit
+        args: ["-r", "src/", "-f", "json"]
+        exclude: ^tests/
+
+  # Type checking (optional but recommended)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.18.2
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests]
+        args: [--ignore-missing-imports]
+        exclude: ^(tests/|scripts/)
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0
+    hooks:
+      - id: hadolint-docker
+        args: [--ignore, DL3008, --ignore, DL3009]
+
+  # Local hooks
+  - repo: local
+    hooks:
+      # Fast pytest for critical tests only
+      - id: pytest-quick
+        name: pytest-quick
+        entry: pytest
+        language: system
+        pass_filenames: false
+        args: [
+          "tests/test_config.py",
+          "tests/test_data_loader.py",
+          "-v",
+          "--tb=short",
+          "--maxfail=3"
+        ]
+        files: ^(src/|tests/).*\.py$
+
+      # Check for TODO/FIXME comments in new code
+      - id: check-todos
+        name: Check for TODO/FIXME
+        entry: bash
+        language: system
+        pass_filenames: false
+        always_run: true
+        args: [
+          "-c",
+          "if git diff --cached --name-only | xargs grep -l 'TODO\\|FIXME' 2>/dev/null; then echo 'Warning: TODO/FIXME found in staged files'; fi"
+        ]
+
+# Global configuration
+default_stages: [pre-commit]
+fail_fast: true
