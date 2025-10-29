@@ -13,7 +13,7 @@ echo "Creating S3 buckets for Chicago Crimes application..."
 # Check if static bucket exists and handle accordingly
 if aws s3 ls s3://$STATIC_BUCKET 2>/dev/null; then
     echo "Bucket $STATIC_BUCKET already exists"
-    
+
     # Check if bucket has content
     OBJECT_COUNT=$(aws s3 ls s3://$STATIC_BUCKET --recursive | wc -l)
     if [ $OBJECT_COUNT -gt 0 ]; then
@@ -35,7 +35,7 @@ fi
 # Check if upload bucket exists and handle accordingly
 if aws s3 ls s3://$UPLOAD_BUCKET 2>/dev/null; then
     echo "Bucket $UPLOAD_BUCKET already exists"
-    
+
     # Check if bucket has content
     OBJECT_COUNT=$(aws s3 ls s3://$UPLOAD_BUCKET --recursive | wc -l)
     if [ $OBJECT_COUNT -gt 0 ]; then
@@ -76,23 +76,23 @@ EOF
 
 aws s3api put-bucket-lifecycle-configuration \
     --bucket $UPLOAD_BUCKET \
-    --lifecycle-configuration file://upload-lifecycle-policy.json
+    --lifecycle-configuration file://upload-lifecycle-policy.json > /dev/null 2>&1
 
 # Enable versioning on upload bucket
 aws s3api put-bucket-versioning \
     --bucket $UPLOAD_BUCKET \
-    --versioning-configuration Status=Enabled
+    --versioning-configuration Status=Enabled > /dev/null 2>&1
 
-# Configure CORS for upload bucket
+# Configure basic CORS for upload bucket (will be updated after CloudFront)
 cat > upload-cors-policy.json << EOF
 {
     "CORSRules": [
         {
             "AllowedHeaders": ["*"],
-            "AllowedMethods": ["GET", "PUT", "POST", "DELETE"],
+            "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
             "AllowedOrigins": ["*"],
             "ExposeHeaders": ["ETag"],
-            "MaxAgeSeconds": 3000
+            "MaxAgeSeconds": 86400
         }
     ]
 }
@@ -100,7 +100,7 @@ EOF
 
 aws s3api put-bucket-cors \
     --bucket $UPLOAD_BUCKET \
-    --cors-configuration file://upload-cors-policy.json
+    --cors-configuration file://upload-cors-policy.json > /dev/null 2>&1
 
 echo "S3 buckets created successfully!"
 echo "Static website bucket: $STATIC_BUCKET (private)"
@@ -109,3 +109,7 @@ echo "Note: Static website will be accessed via CloudFront distribution"
 
 # Clean up temporary files
 rm -f upload-lifecycle-policy.json upload-cors-policy.json
+
+echo ""
+echo "--------------------------------NEXT STEP-----------------------------------"
+echo ""

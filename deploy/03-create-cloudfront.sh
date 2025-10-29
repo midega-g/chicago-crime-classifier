@@ -8,7 +8,24 @@ set -e
 # Load configuration
 source "$(dirname "$0")/00-config.sh"
 
-echo "Creating CloudFront distribution with Origin Access Control..."
+echo "Step 3: Creating CloudFront distribution with Origin Access Control..."
+
+# Check if distribution already exists
+echo "Checking for existing CloudFront distribution..."
+EXISTING_DIST=$(aws cloudfront list-distributions --query "DistributionList.Items[?Comment=='$DISTRIBUTION_COMMENT'].Id" --output text)
+
+if [ ! -z "$EXISTING_DIST" ] && [ "$EXISTING_DIST" != "None" ]; then
+    echo "✓ CloudFront distribution already exists: $EXISTING_DIST"
+    DOMAIN_NAME=$(aws cloudfront get-distribution --id $EXISTING_DIST --query 'Distribution.DomainName' --output text)
+    echo "✓ Domain Name: $DOMAIN_NAME"
+    echo "Skipping CloudFront creation - using existing distribution"
+    echo ""
+    echo "--------------------------------NEXT STEP-----------------------------------"
+    echo ""
+    exit 0
+fi
+
+echo "Creating new CloudFront distribution..."
 
 # Step 1: Create or get existing Origin Access Control (OAC)
 echo "Checking for existing Origin Access Control..."
@@ -23,7 +40,7 @@ else
     OAC_RESPONSE=$(aws cloudfront create-origin-access-control \
         --origin-access-control-config \
             Name="chicago-crimes-oac-$TIMESTAMP",Description="OAC for Chicago Crimes static website",OriginAccessControlOriginType="s3",SigningBehavior="always",SigningProtocol="sigv4")
-    
+
     OAC_ID=$(echo $OAC_RESPONSE | jq -r '.OriginAccessControl.Id')
     echo "Created OAC with ID: $OAC_ID"
 fi
@@ -92,7 +109,7 @@ cat > cloudfront-config.json << EOF
 EOF
 
 # Step 3: Create the distribution
-echo "Creating CloudFront distribution..."
+echo "Creating new CloudFront distribution..."
 DISTRIBUTION_RESPONSE=$(aws cloudfront create-distribution \
     --distribution-config file://cloudfront-config.json)
 
@@ -137,11 +154,37 @@ echo ""
 echo "S3 bucket is now private and accessible only via CloudFront"
 echo "Once deployed, your app will be available at: https://$DOMAIN_NAME"
 
+# Step 5: Update S3 upload bucket CORS with CloudFront domain
+echo ""
+echo "Updating S3 upload bucket CORS policy with CloudFront domain..."
+cat > upload-cors-policy.json << EOF
+{
+    "CORSRules": [
+        {
+            "AllowedHeaders": ["*"],
+            "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+            "AllowedOrigins": ["*", "https://$DOMAIN_NAME"],
+            "ExposeHeaders": ["ETag"],
+            "MaxAgeSeconds": 86400
+        }
+    ]
+}
+EOF
+
+aws s3api put-bucket-cors \
+    --bucket $UPLOAD_BUCKET \
+    --cors-configuration file://upload-cors-policy.json
+
+echo "✓ S3 upload bucket CORS updated with CloudFront domain"
+
 # Clean up
-rm -f cloudfront-config.json s3-cloudfront-policy.json
+rm -f cloudfront-config.json s3-cloudfront-policy.json upload-cors-policy.json
 
 echo ""
 echo "IMPORTANT: Update the API_GATEWAY_URL in static-web/script.js and redeploy:"
 echo "1. Update API_GATEWAY_URL in static-web/script.js"
 echo "2. Run: ./deploy/05-deploy-static-website.sh"
 echo "3. Invalidate CloudFront cache: aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths '/*'"
+echo ""
+echo "--------------------------------NEXT STEP-----------------------------------"
+echo ""

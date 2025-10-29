@@ -24,3 +24,6 @@ export API_NAME="chicago-crimes-api"
 
 # CloudFront Configuration
 export DISTRIBUTION_COMMENT="Chicago Crimes Prediction App"
+
+# Email Configuration
+export ADMIN_EMAIL="midegageorge2@gmail.com"
