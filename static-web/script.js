@@ -1,5 +1,5 @@
 // Configuration - Update these URLs after deployment
-const API_GATEWAY_URL = 'https://your-api-gateway-url.amazonaws.com/prod';
+const API_GATEWAY_URL = 'https://5dwt3wd5p8.execute-api.af-south-1.amazonaws.com/prod';
 const UPLOAD_BUCKET = 'chicago-crimes-uploads';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -12,9 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const results = document.getElementById('results');
 
     // Handle file selection
-    fileInput.addEventListener('change', function(e) {
+    fileInput.addEventListener('change', async function(e) {
         const file = e.target.files[0];
-        
+
         if (file) {
             // Validate file type
             const fileName = file.name.toLowerCase();
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 fileInput.value = '';
                 return;
             }
-            
+
             // Validate file size (200MB limit)
             const maxSize = 200 * 1024 * 1024; // 200MB in bytes
             if (file.size > maxSize) {
@@ -31,21 +31,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 fileInput.value = '';
                 return;
             }
-            
+
+            // Validate file content and structure
+            const validationResult = await validateFileContent(file);
+            if (!validationResult.isValid) {
+                alert(validationResult.error);
+                fileInput.value = '';
+                return;
+            }
+
             // Show file info
             document.getElementById('fileName').textContent = file.name;
             fileInfo.style.display = 'block';
             submitBtn.disabled = false;
-            
+
             // Update file input label
             const label = document.querySelector('.file-input-label span');
             label.textContent = 'File Selected';
-            
+
         } else {
             // Hide file info
             fileInfo.style.display = 'none';
             submitBtn.disabled = true;
-            
+
             // Reset file input label
             const label = document.querySelector('.file-input-label span');
             label.textContent = 'Choose CSV File';
@@ -55,16 +63,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle form submission
     uploadForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-        
+
         const file = fileInput.files[0];
         if (!file) {
             alert('Please select a file first.');
             return;
         }
-        
+
         // Show loading animation
         showLoading();
-        
+
         try {
             // Upload file to S3 and get predictions
             const results = await uploadAndPredict(file);
@@ -79,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
     async function uploadAndPredict(file) {
         // Step 1: Get presigned URL for S3 upload
         updateProgress(1);
-        
+
         const presignedResponse = await fetch(`${API_GATEWAY_URL}/get-upload-url`, {
             method: 'POST',
             headers: {
@@ -90,16 +98,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 contentType: file.type || 'text/csv'
             })
         });
-        
+
         if (!presignedResponse.ok) {
             throw new Error('Failed to get upload URL');
         }
-        
+
         const { uploadUrl, key } = await presignedResponse.json();
-        
-        // Step 2: Upload file to S3
+
+        // Step 2: Upload directly to S3 using presigned URL
         updateProgress(2);
-        
+
         const uploadResponse = await fetch(uploadUrl, {
             method: 'PUT',
             body: file,
@@ -107,15 +115,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': file.type || 'text/csv'
             }
         });
-        
+
         if (!uploadResponse.ok) {
-            throw new Error('Failed to upload file');
+            throw new Error('Failed to upload file to S3');
         }
-        
-        // Step 3: Wait for processing and get results
+
+        // Step 3: Wait for S3 trigger Lambda to process file
         updateProgress(3);
-        
-        // Poll for results (Lambda processes the file automatically via S3 trigger)
+
+        // Poll for results (S3 trigger Lambda processes automatically)
         const results = await pollForResults(key);
         return results;
     }
@@ -124,21 +132,26 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             try {
                 const response = await fetch(`${API_GATEWAY_URL}/get-results/${encodeURIComponent(fileKey)}`);
-                
+
                 if (response.ok) {
                     const results = await response.json();
                     if (results.status === 'completed') {
                         return results.data;
+                    } else if (results.status === 'error') {
+                        throw new Error(results.error || 'File processing failed');
                     }
                 }
-                
+
                 // Wait before next attempt
                 await new Promise(resolve => setTimeout(resolve, interval));
             } catch (error) {
+                if (error.message.includes('Corrupted gzip file') || error.message.includes('CRC check failed')) {
+                    throw error; // Don't retry for corruption errors
+                }
                 console.log(`Polling attempt ${attempt + 1} failed:`, error);
             }
         }
-        
+
         throw new Error('Processing timeout. Please try again.');
     }
 
@@ -158,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateProgress(step) {
         // Reset all steps
         document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-        
+
         // Activate steps up to current
         for (let i = 1; i <= step; i++) {
             const stepElement = document.getElementById(`step${i}`) || document.querySelector('.step');
@@ -171,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function showResults(data) {
         loading.style.display = 'none';
         results.style.display = 'block';
-        
+
         // Update result values
         document.getElementById('totalCases').textContent = data.summary.total_cases.toLocaleString();
         document.getElementById('predictedArrests').textContent = data.summary.predicted_arrests.toLocaleString();
@@ -219,11 +232,150 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (files.length > 0) {
             fileInput.files = files;
-            
+
             // Trigger change event
             const event = new Event('change', { bubbles: true });
             fileInput.dispatchEvent(event);
         }
+    }
+
+    // Comprehensive file validation
+    async function validateFileContent(file) {
+        const label = document.querySelector('.file-input-label span');
+        const originalText = label.textContent;
+
+        try {
+            label.textContent = '🔍 Checking file format...';
+
+            let csvText;
+
+            // Handle gzip files
+            if (file.name.toLowerCase().endsWith('.csv.gz')) {
+                label.textContent = '📦 Loading decompression library...';
+                await loadPako();
+
+                label.textContent = '🔓 Decompressing file...';
+                const arrayBuffer = await file.arrayBuffer();
+                const bytes = new Uint8Array(arrayBuffer);
+
+                // Check gzip magic number
+                if (bytes.length < 10 || bytes[0] !== 0x1f || bytes[1] !== 0x8b) {
+                    return { isValid: false, error: 'Invalid gzip file format.' };
+                }
+
+                // Decompress and validate
+                try {
+                    const decompressed = pako.inflate(bytes, { to: 'string' });
+                    csvText = decompressed;
+                } catch (pakoError) {
+                    return { isValid: false, error: 'Corrupted gzip file. Please re-compress and try again.' };
+                }
+            } else {
+                label.textContent = '📄 Reading CSV file...';
+                csvText = await file.text();
+            }
+
+            label.textContent = '✅ Validating structure...';
+            // Validate CSV structure and required columns
+            const validation = validateCSVStructure(csvText);
+            label.textContent = originalText;
+            return validation;
+
+        } catch (error) {
+            console.error('File validation error:', error);
+            label.textContent = originalText;
+            return { isValid: false, error: 'Failed to validate file. Please try again.' };
+        }
+    }
+
+    // Validate CSV structure and required columns
+    function validateCSVStructure(csvText) {
+        try {
+            const lines = csvText.trim().split('\n');
+
+            if (lines.length < 2) {
+                return { isValid: false, error: 'File must contain at least a header and one data row.' };
+            }
+
+            // Parse header using proper CSV parsing
+            const header = parseCSVRow(lines[0]);
+
+            // Required columns based on the notebook
+            const requiredColumns = [
+                'date', 'primary_type', 'location_description',
+                'arrest', 'domestic', 'district', 'ward',
+                'community_area', 'fbi_code'
+            ];
+
+            // Check for missing required columns
+            const missingColumns = requiredColumns.filter(col =>
+                !header.some(h => h.toLowerCase() === col.toLowerCase())
+            );
+
+            if (missingColumns.length > 0) {
+                return {
+                    isValid: false,
+                    error: `Missing required columns: ${missingColumns.join(', ')}. Required columns are: ${requiredColumns.join(', ')}.`
+                };
+            }
+
+            // Validate data format in first few rows (skip empty lines)
+            const sampleRows = lines.slice(1, Math.min(4, lines.length)).filter(line => line.trim());
+            for (let i = 0; i < sampleRows.length; i++) {
+                const row = parseCSVRow(sampleRows[i]);
+
+                if (row.length !== header.length) {
+                    return {
+                        isValid: false,
+                        error: `Row ${i + 2} has ${row.length} columns but header has ${header.length} columns. Please check your CSV format.`
+                    };
+                }
+            }
+
+            return { isValid: true };
+
+        } catch (error) {
+            console.error('CSV validation error:', error);
+            return { isValid: false, error: 'Invalid CSV format. Please check your file structure.' };
+        }
+    }
+
+    // Simple CSV row parser that handles quoted fields
+    function parseCSVRow(row) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+
+        for (let i = 0; i < row.length; i++) {
+            const char = row[i];
+
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+
+        result.push(current.trim());
+        return result;
+    }
+
+    // Load pako library dynamically
+    async function loadPako() {
+        if (typeof pako !== 'undefined') {
+            return; // Already loaded
+        }
+
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     }
 });
 
@@ -233,7 +385,7 @@ function resetForm() {
     document.querySelector('.upload-header').style.display = 'block';
     document.getElementById('loading').style.display = 'none';
     document.getElementById('results').style.display = 'none';
-    
+
     // Reset form fields
     document.getElementById('fileInput').value = '';
     document.getElementById('fileInfo').style.display = 'none';
