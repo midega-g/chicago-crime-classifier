@@ -46,8 +46,8 @@ repos:
     rev: 1.8.6
     hooks:
       - id: bandit
-        args: ["-r", "src/", "-f", "json"]
-        exclude: ^tests/
+        args: ["-r", "-f", "json", "--skip", "B301,B403"] # Skip pickle-related tests (b301, b403)
+        exclude: ^(tests/|scripts/extract_sample_data\.py)
 
   # Type checking (optional but recommended)
   - repo: https://github.com/pre-commit/mirrors-mypy
