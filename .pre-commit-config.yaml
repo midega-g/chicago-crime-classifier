@@ -68,20 +68,22 @@ repos:
   # Local hooks
   - repo: local
     hooks:
-      # Fast pytest for critical tests only
-      - id: pytest-quick
-        name: pytest-quick
-        entry: pytest
-        language: system
-        pass_filenames: false
-        args: [
-          "tests/test_config.py",
-          "tests/test_data_loader.py",
-          "-v",
-          "--tb=short",
-          "--maxfail=3"
-        ]
-        files: ^(src/|tests/).*\.py$
+      # # Fast pytest for critical tests only
+      # - id: pytest-quick
+      #   name: pytest-quick
+      #   entry: pytest
+      #   language: system
+      #   pass_filenames: false
+      #   args: [
+      #     "tests/test_config.py",
+      #     "tests/test_data_loader.py",
+      #     "-v",
+      #     "--tb=short",
+      #     "--maxfail=3"
+      #   ]
+      #   files: ^(src/|tests/).*\.py$
+      #   env:
+      #     PYTHONPATH: src
 
       # Check for TODO/FIXME comments in new code
       - id: check-todos

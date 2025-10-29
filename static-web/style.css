@@ -419,21 +419,21 @@ body {
         flex-direction: column;
         gap: 20px;
     }
-    
+
     .results-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .progress-steps {
         flex-direction: column;
         gap: 15px;
     }
-    
+
     .step {
         flex-direction: row;
         gap: 10px;
     }
-    
+
     .source-info {
         flex-direction: column;
         text-align: center;
