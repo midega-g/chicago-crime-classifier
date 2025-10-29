@@ -138,7 +138,7 @@ The asynchronous file reading implementation addresses memory management concern
 try:
     # Read CSV content (handle both regular and gzipped)
     contents = await file.read()
-    
+
     if file.filename.endswith(".csv.gz"):
         df = pd.read_csv(io.BytesIO(contents), compression='gzip', parse_dates=['date'])
     else:
@@ -171,9 +171,9 @@ def prepare_features(df, location_mapping):
     """Extract temporal features and apply location mapping."""
     # Preserve ID column if it exists
     id_col = df['id'].copy() if 'id' in df.columns else None
-    
+
     # Other feature engineering logic go here
-    
+
     # Re-add ID column if it existed
     if id_col is not None:
         df['id'] = id_col

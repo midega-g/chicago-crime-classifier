@@ -107,7 +107,7 @@ The responsive design implementation adapts the interface layout for mobile devi
     .stats-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .progress-steps {
         flex-direction: column;
         gap: 15px;

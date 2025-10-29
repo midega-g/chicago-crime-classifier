@@ -134,27 +134,27 @@ def create_xgb_pipeline(sample_weights, model_params=None):
     """Create XGBoost pipeline with DictVectorizer."""
     if model_params is None:
         model_params = MODEL_PARAMS.copy()
-    
+
     # Add scale_pos_weight for class imbalance
     model_params['scale_pos_weight'] = sample_weights.get(1, 1)
-    
+
     model = xgb.XGBClassifier(**model_params)
-    
+
     pipeline = make_pipeline(
         DictVectorizer(sparse=True, dtype=np.float32),
         model
     )
-    
+
     return pipeline
 
 def save_model(pipeline, model_path=None):
     """Save trained model to disk."""
     if model_path is None:
         model_path = MODEL_DIR / 'xgb_model.pkl'
-    
+
     with open(model_path, 'wb') as f_out:
         pickle.dump(pipeline, f_out)
-    
+
     print(f"Model saved to {model_path}")
 ```
 
@@ -169,13 +169,13 @@ def evaluate_model(pipeline, X_dict, y_true, dataset_name="Validation"):
     """Evaluate model performance and return metrics."""
     y_pred_proba = pipeline.predict_proba(X_dict)[:, 1]
     y_pred = pipeline.predict(X_dict)
-    
+
     auc_score = roc_auc_score(y_true, y_pred_proba)
     classification_rep = classification_report(y_true, y_pred)
-    
+
     print(f"{dataset_name} AUC-ROC: {auc_score:.4f}")
     print(f"\nClassification Report ({dataset_name}):\n{classification_rep}")
-    
+
     return {
         'auc_score': auc_score,
         'y_pred_proba': y_pred_proba,
@@ -268,26 +268,26 @@ The `train_model.py` script demonstrates the integration of all modular componen
 ```python
 def main():
     print("Loading and preparing training data...")
-    
+
     # Load location mapping
     location_mapping = load_location_mapping()
-    
+
     # Create training dataset
     train_df = create_dataset(TRAIN_DATA_PATH, location_mapping)
-    
+
     # Prepare features and target
     X_train, y_train = create_features_target(train_df)
-    
+
     # Compute class weights
     sample_weights = compute_class_weights(y_train)
-    
+
     # Convert to dictionary format
     X_train_dict = convert_to_dict_features(X_train)
-    
+
     # Create and train model
     pipeline = create_xgb_pipeline(sample_weights)
     pipeline = train_model(pipeline, X_train_dict, y_train)
-    
+
     # Save model
     save_model(pipeline)
 ```

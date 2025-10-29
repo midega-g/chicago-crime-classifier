@@ -122,8 +122,8 @@ The `"CustomErrorResponses"` section implements single-page application (SPA) be
     ```sh
         # code ignored for brevity
         {
-        "ErrorCode": 404, 
-        "ResponsePagePath": "/index.html", 
+        "ErrorCode": 404,
+        "ResponsePagePath": "/index.html",
         "ResponseCode": "200"
         ...
         }

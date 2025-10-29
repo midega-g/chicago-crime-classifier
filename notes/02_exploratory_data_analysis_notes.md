@@ -68,7 +68,7 @@ The Location Description field presents a manageable cardinality challenge with 
 # countries and their regions
 with open ('./location_description.json', 'r') as file:
     map_loc_desc = json.load(file)
-    
+
 df['location_group'] = df['location_description'].map(map_loc_desc).fillna("Unknown/Other")
 df.drop(columns=['date', 'location_description'], inplace=True)
 ```
