@@ -1,0 +1,3 @@
+id,case_number,date,primary_type,arrest,domestic
+1,ABC123,2025-01-01,THEFT,False,False
+2,DEF456,2025-01-02,BATTERY,True,True
