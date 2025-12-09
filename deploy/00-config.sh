@@ -3,9 +3,17 @@
 # Chicago Crimes Serverless Deployment - Configuration
 # Centralized configuration for all deployment scripts
 
+# Load sensitive configuration from .env file
+if [ -f "$(dirname "$0")/../.env" ]; then
+    export $(grep -v '^#' "$(dirname "$0")/../.env" | xargs)
+else
+    echo "Error: .env file not found. Please create it with AWS_ACCOUNT_ID and ADMIN_EMAIL"
+    exit 1
+fi
+
 # AWS Configuration
 export REGION="af-south-1"
-export ACCOUNT_ID="076181803615"
+export ACCOUNT_ID="${AWS_ACCOUNT_ID}"
 
 # S3 Configuration
 export STATIC_BUCKET="chicago-crimes-static-web"
@@ -26,4 +34,4 @@ export API_NAME="chicago-crimes-api"
 export DISTRIBUTION_COMMENT="Chicago Crimes Prediction App"
 
 # Email Configuration
-export ADMIN_EMAIL="midegageorge2@gmail.com"
+export ADMIN_EMAIL="${ADMIN_EMAIL}"
