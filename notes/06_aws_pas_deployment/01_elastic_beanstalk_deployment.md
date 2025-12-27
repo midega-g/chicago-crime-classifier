@@ -24,7 +24,7 @@ aws configure get region --profile <myprofile>
 
 These preliminary steps ensure that your deployment targets the correct AWS region and uses the appropriate credentials, which is crucial for both security and cost optimization.
 
-## Elastic Beanstalk CLI Installation
+## Elastic Beanstalk CLI Installation (Optional)
 
 The next phase involves installing the AWS Elastic Beanstalk CLI, which serves as the primary interface for managing deployments. Rather than using traditional pip installation, modern Python package management with `uv` provides faster and more reliable dependency resolution. The command below installs the Elastic Beanstalk CLI as a development dependency:
 
@@ -54,6 +54,11 @@ eb init \
     -r <region> \
     --profile <profile>
 ```
+
+eb init \
+    -p docker crime-arrest-classifier \
+    -r us-east-1 \
+    --profile r-dietto
 
 This command produces output confirming the application creation: "Application crime-arrest-classifier has been created." The initialization process creates a `.elasticbeanstalk` directory containing a `config.yml` file that stores essential configuration parameters including the application name, default environment settings, platform specification, and regional deployment preferences. This configuration file serves as the blueprint for all subsequent deployment operations and can be version-controlled alongside your application code.
 
@@ -111,14 +116,58 @@ Security considerations are paramount when deploying machine learning services t
 
 ### Cleanup and Termination
 
-When your application is no longer needed or when you want to avoid ongoing costs, proper cleanup is essential. The termination command removes all associated AWS resources:
+When your application is no longer needed or when you want to prevent ongoing charges, thorough cleanup becomes essential. The Elastic Beanstalk termination process handles most resources automatically, but a few items require manual intervention to achieve a completely clean AWS account.
+
+The primary command to terminate an environment is:
 
 ```sh
 eb terminate crime-arrest-classifier-env
 ```
 
-This command safely removes the environment and all its associated resources, including EC2 instances, load balancers, security groups, and auto-scaling configurations. Proper termination prevents unexpected charges and maintains a clean AWS account structure. Also ensure that you login into your AWS console and delete any S3 bucket that might have been created in this case, it's named `elasticbeanstalk-af-south-1-<account-number>`
+This command initiates the safe deletion of the environment along with the majority of its associated AWS resources, such as EC2 instances, Elastic Load Balancers, Auto Scaling groups, security groups (when not in use by other resources), CloudWatch alarms, and SNS topics. The process typically completes within several minutes, after which Elastic Beanstalk no longer manages those components. Executing this step is the recommended first action for cleanup, as it eliminates most compute, networking, and monitoring costs associated with the environment.
 
-## Advantages for ML Deployment
+However, the `eb terminate` command does not fully delete certain resources in all scenarios. The most common exception is the region-specific Elastic Beanstalk S3 bucket (named in the format `elasticbeanstalk-<region>-<account_id>`, such as `elasticbeanstalk-af-south-1-134618180303`). Elastic Beanstalk creates this bucket to store application versions, logs, configuration files, and other artifacts. To clean up this S3 bucket, first ensure it is completely empty by removing all remaining objects (including any versioned objects or delete markers):
 
-The Elastic Beanstalk deployment approach provides significant advantages for machine learning model deployment, including automatic scaling based on demand, built-in health monitoring and recovery, simplified deployment and rollback procedures, and integration with other AWS services. This deployment strategy transforms a local machine learning model into a robust, production-ready service capable of handling real-world traffic patterns while maintaining high availability and performance standards.
+```sh
+ACCOUNT_ID=<enter-your-account-id>
+
+aws s3 rm s3://elasticbeanstalk-af-south-1-${ACCOUNT_ID} --recursive
+```
+
+While this command automatically removes most objects within the bucket, the bucket itself remains due to a built-in bucket policy that contains an explicit Deny statement on the `s3:DeleteBucket` action. This protective policy prevents accidental deletion and must be modified or removed before the bucket can be deleted. To do so, run the command below to modify the Deny statement for `s3:DeleteBucket` to `Allow`:
+
+```sh
+aws s3api get-bucket-policy \
+  --bucket elasticbeanstalk-af-south-1-${ACCOUNT_ID} \
+  --query Policy \
+  --output text | \
+  jq '(.Statement[] | select(.Action=="s3:DeleteBucket")).Effect = "Allow"' > policy-modified.json
+```
+
+Then apply the updated policy:
+
+```sh
+aws s3api put-bucket-policy \
+  --bucket elasticbeanstalk-af-south-1-${ACCOUNT_ID} \
+  --policy file://policy-modified.json
+```
+
+Once the policy allows deletion, remove the empty bucket:
+
+```sh
+aws s3 rb s3://elasticbeanstalk-af-south-1-${ACCOUNT_ID}
+```
+
+Finally, clean up the temporary file:
+
+```sh
+rm policy-modified.json
+```
+
+**Other services and resources that may require manual cleanup**
+In addition to the S3 bucket, Elastic Beanstalk does not always delete the following items automatically during environment termination:
+
+- **Application versions stored in S3** — While Elastic Beanstalk deletes its tracking records of versions, the actual source bundles (.zip files, etc.) often remain in the Elastic Beanstalk S3 bucket unless you explicitly choose to delete them during application deletion (via the console or `--delete-source-bundle` option with `eb delete-application`).
+- **RDS databases** — If your environment includes an integrated RDS instance and you have not set its deletion policy to "Delete" (default is "Snapshot" or "Retain" in some configurations), the database persists after termination. To preserve data, change the policy to retain or snapshot before terminating.
+- **Security groups** — These are usually deleted, but they can remain if referenced by external resources (e.g., ENIs, other EC2 instances, or manual configurations). In such cases, termination may fail or leave orphaned groups, requiring manual deletion via the EC2 console or CloudFormation stack adjustments.
+- **CloudFormation stack remnants** — In rare failure cases, the underlying CloudFormation stack may enter a `DELETE_FAILED` state, leaving partial resources. You can retry deletion in the CloudFormation console or retain problematic resources (like RDS) and delete the stack manually.
