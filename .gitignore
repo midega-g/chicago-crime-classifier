@@ -9,9 +9,12 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+presentation/
 scribble.*
 todo.md
 *_arrest_predictions.csv
+
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
