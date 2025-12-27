@@ -16,6 +16,11 @@ repos:
       - id: debug-statements
       - id: check-docstring-first
 
+  -   repo: https://github.com/koalaman/shellcheck-precommit
+      rev: v0.11.0
+      hooks:
+      -   id: shellcheck
+
   # Python import sorting
   - repo: https://github.com/pycqa/isort
     rev: 7.0.0
@@ -25,7 +30,7 @@ repos:
 
   # Python code formatting
   - repo: https://github.com/psf/black
-    rev: 25.9.0
+    rev: 25.12.0
     hooks:
       - id: black
         language_version: python3.12
@@ -43,7 +48,7 @@ repos:
 
   # Security scanning
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.6
+    rev: 1.9.2
     hooks:
       - id: bandit
         args: ["-r", "-f", "json", "--skip", "B301,B403"] # Skip pickle-related tests (b301, b403)
@@ -51,7 +56,7 @@ repos:
 
   # Type checking (optional but recommended)
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.2
+    rev: v1.19.1
     hooks:
       - id: mypy
         additional_dependencies: [types-requests]
