@@ -17,7 +17,7 @@ config.read('config.conf')
 client = Socrata(
     config['api']['socrata_domain'],
     os.getenv('SOCRATA_TOKEN'),
-    username=config['api']['socrata_username'],
+    username=os.getenv('SOCRATA_USERNAME'),
     password=os.getenv('SOCRATA_PASSWORD')
 )
 
