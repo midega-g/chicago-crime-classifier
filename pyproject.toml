@@ -33,3 +33,32 @@ packages = ["src/chicago_crimes"]
 
 [project.scripts]
 train-model = "chicago_crimes.training.train_model:main"
+
+[tool.pylint.messages_control]
+
+disable = [
+    "missing-function-docstring",
+    "missing-final-newline",
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "invalid-name",
+    "broad-exception-caught",
+    "import-error",
+    "too-many-locals",
+]
+
+[tool.ruff]
+extend-include = ["*.py"]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+combine-as-imports = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101", "B104", "B301", "B403", "B404", "B603", "B608"]
