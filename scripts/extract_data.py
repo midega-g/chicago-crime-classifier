@@ -1,28 +1,29 @@
 #!/usr/bin/env python
 
-import pandas as pd
-from datetime import datetime, timezone
-from sodapy import Socrata
-import time
-import os
 import configparser
+import os
+import time
+from datetime import datetime, timezone
+
+import pandas as pd
 from dotenv import load_dotenv
+from sodapy import Socrata
 
 # Load environment variables and configuration
 load_dotenv()
 config = configparser.ConfigParser()
-config.read('config.conf')
+config.read("config.conf")
 
 # Initialize Socrata client with configuration
 client = Socrata(
-    config['api']['socrata_domain'],
-    os.getenv('SOCRATA_TOKEN'),
-    username=config['api']['socrata_username'],
-    password=os.getenv('SOCRATA_PASSWORD')
+    config["api"]["socrata_domain"],
+    os.getenv("SOCRATA_TOKEN"),
+    username=os.getenv("SOCRATA_USERNAME"),
+    password=os.getenv("SOCRATA_PASSWORD"),
 )
 
 # Ensure data directory exists
-os.makedirs('data', exist_ok=True)
+os.makedirs("data", exist_ok=True)
 
 # Current UTC time truncated to milliseconds for test end date
 now = datetime.now(timezone.utc)
@@ -35,9 +36,9 @@ where_test = f'date >= "2025-01-01T00:00:00" AND date <= "{end_date_str}"'
 
 # Dictionary to map where clauses to file names
 batches = [
-    (where_train, 'train_2022_2023.csv'),
-    (where_val, 'val_2024.csv'),
-    (where_test, 'test_2025.csv')
+    (where_train, "train_2022_2023.csv"),
+    (where_val, "val_2024.csv"),
+    (where_test, "test_2025.csv"),
 ]
 
 # Pagination parameters
@@ -45,7 +46,7 @@ limit = 100_000  # Rows per page
 
 # Execute queries in sequence with pagination and 5-second sleep between pages
 for i, (where, filename) in enumerate(batches):
-    print(f"Fetching batch {i+1}/3: {filename}")
+    print(f"Fetching batch {i + 1}/3: {filename}")
     offset = 0
     all_results = []  # Accumulate all pages here
 
@@ -53,10 +54,7 @@ for i, (where, filename) in enumerate(batches):
         try:
             # Fetch one page using 'where' parameter for SoQL filter
             page_results = client.get(
-                config['api']['dataset_id'],
-                where=where,
-                limit=limit,
-                offset=offset
+                config["api"]["dataset_id"], where=where, limit=limit, offset=offset
             )
 
             # Append this page to the full list
@@ -78,9 +76,9 @@ for i, (where, filename) in enumerate(batches):
 
     # Convert to DataFrame and save
     df = pd.DataFrame.from_records(all_results)
-    filepath = os.path.join('data', filename)
+    filepath = os.path.join("data", filename)
     print(f"Saving {len(df)} rows to {filepath}.gz")
-    df.to_csv(filepath + '.gz', index=False, compression='gzip')
+    df.to_csv(filepath + ".gz", index=False, compression="gzip")
     print(f"Saved {len(df)} rows to {filepath}.gz")
 
     # Sleep 5 seconds before next batch (skip after last)
