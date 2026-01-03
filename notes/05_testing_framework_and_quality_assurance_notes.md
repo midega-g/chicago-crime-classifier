@@ -42,7 +42,7 @@ class TestConfig:
         """Test that PROJECT_ROOT points to a valid directory."""
         assert PROJECT_ROOT.exists()
         assert (PROJECT_ROOT / 'pyproject.toml').exists()
-    
+
     def test_feature_configuration(self):
         """Test feature configuration."""
         assert isinstance(REMOVE_COLS, list)
@@ -65,16 +65,16 @@ def test_prepare_features(self, sample_dataframe):
     """Test feature preparation function."""
     # Mock location mapping
     location_mapping = {"STREET": "Street/Public", "RESIDENCE": "Residential"}
-    
+
     result_df = prepare_features(sample_dataframe.copy(), location_mapping)
-    
+
     # Check that new features are created
     assert 'hour' in result_df.columns
     assert 'day_of_week' in result_df.columns
     assert 'is_night' in result_df.columns
     assert 'is_weekend' in result_df.columns
     assert 'location_group' in result_df.columns
-    
+
     # Check that original columns are removed
     assert 'date' not in result_df.columns
     assert 'location_description' not in result_df.columns
@@ -93,9 +93,9 @@ def test_compute_class_weights(self):
     """Test class weight computation for imbalanced data."""
     # Create imbalanced labels
     y_imbalanced = np.array([0, 0, 0, 0, 1])  # 4:1 ratio
-    
+
     sample_weights = compute_class_weights(y_imbalanced)
-    
+
     assert isinstance(sample_weights, dict)
     assert 0 in sample_weights
     assert 1 in sample_weights
@@ -115,9 +115,9 @@ The `test_model_trainer.py` module validates the machine learning pipeline const
 def test_create_xgb_pipeline(self):
     """Test pipeline creation."""
     sample_weights = {0: 0.5, 1: 2.0}
-    
+
     pipeline = create_xgb_pipeline(sample_weights)
-    
+
     assert pipeline is not None
     assert hasattr(pipeline, 'steps')
     assert len(pipeline.steps) == 2
@@ -139,18 +139,18 @@ def test_evaluate_model(self, mock_trained_pipeline, capsys):
     # Mock predictions
     mock_proba = [[0.8, 0.2], [0.3, 0.7], [0.9, 0.1]]
     mock_predictions = [0, 1, 0]
-    
+
     # Configure mock pipeline
     mock_trained_pipeline.predict_proba.return_value = mock_proba
     mock_trained_pipeline.predict.return_value = mock_predictions
-    
+
     # Test data
     X_dict = [{'feature1': 'value1'}, {'feature2': 'value2'}, {'feature3': 'value3'}]
     y_true = [0, 1, 0]
-    
+
     # Run evaluation
     metrics = evaluate_model(mock_trained_pipeline, X_dict, y_true, "Test")
-    
+
     # Check returned metrics
     assert 'auc_score' in metrics
     assert 'y_pred_proba' in metrics
@@ -166,25 +166,25 @@ The `test_integration.py` module provides comprehensive end-to-end testing that 
 
 ```python
 class TestIntegration:
-    
+
     def test_end_to_end_feature_processing(self, sample_dataframe, mock_location_mapping):
         """Test the complete feature processing pipeline."""
         # Test data loading and preparation
         processed_df = prepare_features(sample_dataframe.copy(), mock_location_mapping)
-        
+
         # Test feature engineering
         X, y = create_features_target(processed_df)
-        
+
         # Test class weight computation
         sample_weights = compute_class_weights(y)
-        
+
         # Assertions
         assert not X.empty
         assert len(y) == len(processed_df)
         assert isinstance(sample_weights, dict)
         assert 0 in sample_weights
         assert 1 in sample_weights
-        
+
         # Check that all expected feature columns are present
         expected_features = ['primary_type', 'domestic', 'district', 'hour']
         for feature in expected_features:

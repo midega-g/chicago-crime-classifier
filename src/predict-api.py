@@ -1,11 +1,12 @@
 import io
 from pathlib import Path
+
 import pandas as pd
 import uvicorn
-from fastapi import File, FastAPI, Request, UploadFile, HTTPException
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from chicago_crimes.data_loader import load_location_mapping, prepare_features
 from chicago_crimes.feature_engineer import convert_to_dict_features
@@ -35,7 +36,7 @@ location_mapping = load_location_mapping()
 # Remove the predict_arrests function since we're doing it inline
 
 
-@app.get('/', response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 def home_page(request: Request):
     """Home endpoint with file upload interface."""
     return templates.TemplateResponse("index.html", {"request": request})
@@ -46,20 +47,21 @@ async def upload_predict(request: Request, file: UploadFile = File(...)):
     """Handle CSV file uploads for arrest predictions."""
 
     # Validate file type
-    if not file.filename or not (file.filename.endswith(".csv") or file.filename.endswith(".csv.gz")):
+    if not file.filename or not (
+        file.filename.endswith(".csv") or file.filename.endswith(".csv.gz")
+    ):
         raise HTTPException(
-            status_code=400, detail="File must be a CSV (.csv) or gzipped CSV (.csv.gz)")
+            status_code=400, detail="File must be a CSV (.csv) or gzipped CSV (.csv.gz)"
+        )
 
     try:
         # Read CSV content (handle both regular and gzipped)
         contents = await file.read()
 
         if file.filename.endswith(".csv.gz"):
-            df = pd.read_csv(io.BytesIO(contents),
-                             compression='gzip', parse_dates=['date'])
+            df = pd.read_csv(io.BytesIO(contents), compression="gzip", parse_dates=["date"])
         else:
-            df = pd.read_csv(io.StringIO(
-                contents.decode("utf-8")), parse_dates=['date'])
+            df = pd.read_csv(io.StringIO(contents.decode("utf-8")), parse_dates=["date"])
 
         # Prepare features using existing pipeline
         processed_df = prepare_features(df.copy(), location_mapping)
@@ -67,8 +69,7 @@ async def upload_predict(request: Request, file: UploadFile = File(...)):
 
         # Make predictions using existing functions
         pipeline = load_model()
-        feature_cols = [
-            col for col in processed_df.columns if col not in ['arrest', 'id']]
+        feature_cols = [col for col in processed_df.columns if col not in ["arrest", "id"]]
         X = processed_df[feature_cols]
         X_dict = convert_to_dict_features(X)
 
@@ -77,24 +78,21 @@ async def upload_predict(request: Request, file: UploadFile = File(...)):
 
         # Create minimal result DataFrame with only necessary columns
         result_data = {
-            'arrest_prediction': predictions,
-            'arrest_probability': probabilities,
-            'risk_level': pd.cut(
-                probabilities,
-                bins=[0, 0.3, 0.7, 1.0],
-                labels=['Low', 'Medium', 'High']
-            )
+            "arrest_prediction": predictions,
+            "arrest_probability": probabilities,
+            "risk_level": pd.cut(
+                probabilities, bins=[0, 0.3, 0.7, 1.0], labels=["Low", "Medium", "High"]
+            ),
         }
 
         # Add ID if it exists in processed data
-        if 'id' in processed_df.columns:
-            result_data['id'] = processed_df['id'].values
+        if "id" in processed_df.columns:
+            result_data["id"] = processed_df["id"].values
 
         result_df = pd.DataFrame(result_data)
 
         # Generate output filename
-        input_filename = file.filename.replace(
-            '.csv.gz', '').replace('.csv', '')
+        input_filename = file.filename.replace(".csv.gz", "").replace(".csv", "")
         output_filename = f"{input_filename}_arrest_predictions.csv"
         output_path = DATA_DIR / output_filename
 
@@ -105,25 +103,32 @@ async def upload_predict(request: Request, file: UploadFile = File(...)):
         total_cases = len(result_df)
         predicted_arrests = sum(predictions)
         avg_probability = probabilities.mean()
-        high_risk_cases = sum(result_df['risk_level'] == 'High')
+        high_risk_cases = sum(result_df["risk_level"] == "High")
 
-        return templates.TemplateResponse("results.html", {
-            "request": request,
-            "download_link": f"/data/{output_filename}",
-            "filename": output_filename,
-            "total_cases": total_cases,
-            "predicted_arrests": predicted_arrests,
-            "avg_probability": f"{avg_probability:.2%}",
-            "high_risk_cases": high_risk_cases,
-            "success": True
-        })
+        return templates.TemplateResponse(
+            "results.html",
+            {
+                "request": request,
+                "download_link": f"/data/{output_filename}",
+                "filename": output_filename,
+                "total_cases": total_cases,
+                "predicted_arrests": predicted_arrests,
+                "avg_probability": f"{avg_probability:.2%}",
+                "high_risk_cases": high_risk_cases,
+                "success": True,
+            },
+        )
 
-    except (pd.errors.EmptyDataError, pd.errors.ParserError, ValueError, KeyError, FileNotFoundError) as e:
-        return templates.TemplateResponse("results.html", {
-            "request": request,
-            "error": str(e),
-            "success": False
-        })
+    except (
+        pd.errors.EmptyDataError,
+        pd.errors.ParserError,
+        ValueError,
+        KeyError,
+        FileNotFoundError,
+    ) as e:
+        return templates.TemplateResponse(
+            "results.html", {"request": request, "error": str(e), "success": False}
+        )
 
 
 @app.get("/health")

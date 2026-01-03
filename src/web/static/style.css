@@ -566,20 +566,20 @@ body {
     .upload-section {
         grid-template-columns: 1fr;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .legend-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .progress-steps {
         flex-direction: column;
         gap: 15px;
     }
-    
+
     .step {
         flex-direction: row;
         gap: 10px;

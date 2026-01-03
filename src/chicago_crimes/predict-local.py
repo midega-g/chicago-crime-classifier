@@ -1,8 +1,9 @@
 import pandas as pd
-from chicago_crimes.model_trainer import load_model
-from chicago_crimes.feature_engineer import convert_to_dict_features
+
+from chicago_crimes.config import DATA_DIR, MODEL_DIR
 from chicago_crimes.data_loader import create_dataset, load_location_mapping
-from chicago_crimes.config import MODEL_DIR, DATA_DIR
+from chicago_crimes.feature_engineer import convert_to_dict_features
+from chicago_crimes.model_trainer import load_model
 
 
 def predict_new_data(model_path, data_path, location_mapping):
@@ -26,16 +27,17 @@ def predict_new_data(model_path, data_path, location_mapping):
 
 # Example usage
 if __name__ == "__main__":
-    
-    model_path = MODEL_DIR / 'xgb_model.pkl'
-    data_path = DATA_DIR / 'test_2025.csv.gz'
-    location_mapping = load_location_mapping()
+    model_path_ = MODEL_DIR / "xgb_model.pkl"
+    data_path_ = DATA_DIR / "test_2025.csv.gz"
+    location_mapping_ = load_location_mapping()
 
-    predictions, probabilities = predict_new_data(model_path, data_path, location_mapping)
-    result = pd.DataFrame({
-        'prediction': predictions,
-        'probability_no_arrest': probabilities[:, 0],
-        'probability_arrest': probabilities[:, 1]
-    })
+    predictions, probabilities = predict_new_data(model_path_, data_path_, location_mapping_)
+    result = pd.DataFrame(
+        {
+            "prediction": predictions,
+            "probability_no_arrest": probabilities[:, 0],
+            "probability_arrest": probabilities[:, 1],
+        }
+    )
 
     print(result[:2])

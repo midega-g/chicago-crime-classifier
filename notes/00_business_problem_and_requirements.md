@@ -1,8 +1,10 @@
-## Business Problem: Enhancing Predictive Policing for Efficient, Equitable, and Accountable Crime Response in Urban Law Enforcement
+# Business Problem
 
-### Executive Summary
+## Executive Summary
 
-In the City of Chicago, the Chicago Police Department (CPD) processes a high volume of reported crime incidents—approximately 300,000 annually based on historical trends from the Crimes-2001 to Present dataset—while grappling with persistent challenges in resource allocation, clearance rates, and public trust. With overall arrest rates hovering around 10-16% across crime types (e.g., ~14% for violent crimes in 2024), many incidents remain unresolved, leading to operational inefficiencies, escalating costs, and community perceptions of inadequate response. This binary arrest outcome prediction classifier addresses these issues by leveraging publicly available CPD data to forecast arrest likelihood in real-time, enabling proactive triage that optimizes patrols, reduces unnecessary deployments, and promotes bias-aware decision-making. Built on the open Crimes-2001 to Present dataset (updated daily as of October 11, 2025, excluding the most recent seven days), the model supports evidence-based policing while adhering to strict privacy and accuracy disclaimers.
+In the City of Chicago, the Chicago Police Department (CPD) processes a high volume of reported crime incidents—approximately 300,000 annually based on historical trends from the Crimes-2001 to Present dataset—while grappling with persistent challenges in resource allocation, clearance rates, and public trust. With overall arrest rates hovering around 10-16% across crime types (e.g., ~14% for violent crimes in 2024), many incidents remain unresolved, leading to operational inefficiencies, escalating costs, and community perceptions of inadequate response.
+
+This binary arrest outcome prediction classifier addresses these issues by leveraging publicly available CPD data to forecast arrest likelihood in real-time, enabling proactive triage that optimizes patrols, reduces unnecessary deployments, and promotes bias-aware decision-making. Built on the open [Crimes-2001 to Present dataset](https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data) (updated daily as of October 11, 2025, excluding the most recent seven days), the model supports evidence-based policing while adhering to strict privacy and accuracy disclaimers.
 
 ### Core Problem Addressed
 
@@ -29,7 +31,7 @@ This supervised machine learning model—targeting the "Arrest" column (Yes/No)�
 ## Key Stakeholders and Quantifiable Impacts
 
 | Stakeholder | Role | Projected Impact |
-|-------------|------|------------------|
+| ------------- | ------ | ------------------ |
 | **CPD Operations** | Frontline dispatch, investigations | 10-15% faster clearances; \$20-50M annual savings in overtime/personnel (scaled from pilot efficiencies like Arlington PD's \$15K savings). Homicide clearance uplift to >60%. |
 | **City Leadership (e.g., Mayor's Office)** | Budgeting, policy | Enhanced metrics for grants (e.g., via FBI NIBRS alignment); 20-30% crime rate reductions long-term per McKinsey AI benchmarks. |
 | **Communities/Advocacy Groups** | Victims, residents in high-crime areas (e.g., 77 Community Areas) | Reduced underreporting via trust-building (e.g., equitable patrols); targeted interventions in hotspots like Garfield Park. |
@@ -40,6 +42,7 @@ This supervised machine learning model—targeting the "Arrest" column (Yes/No)�
 Initial development (data prep, modeling) costs ~\$50-100K; ROI within 1-2 years via efficiency gains, with scalability to API integration for mobile apps. Pilots in select districts could yield proof-of-concept in 6 months, informing broader adoption amid 2025's projected 5-21% crime declines.
 
 citations:
+<https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data>
 <https://crimelab.uchicago.edu/resources/2024-end-of-year-analysis-chicago-crime-trends/>
 <https://www.whitehouse.gov/articles/2025/08/yes-chicago-has-a-crime-problem-just-ask-its-residents/>
 <https://www.illinoispolicy.org/chicago-violent-crime-trends-up-as-arrests-trend-down/>

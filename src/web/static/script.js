@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle file selection
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
-        
+
         if (file) {
             // Validate file type
             const fileName = file.name.toLowerCase();
@@ -18,21 +18,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 fileInput.value = '';
                 return;
             }
-            
+
             // Show file info
             fileName.textContent = file.name;
             fileInfo.style.display = 'block';
             submitBtn.disabled = false;
-            
+
             // Update file input label
             const label = document.querySelector('.file-input-label span');
             label.textContent = 'File Selected';
-            
+
         } else {
             // Hide file info
             fileInfo.style.display = 'none';
             submitBtn.disabled = true;
-            
+
             // Reset file input label
             const label = document.querySelector('.file-input-label span');
             label.textContent = 'Choose CSV File';
@@ -42,31 +42,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle form submission
     uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         const file = fileInput.files[0];
         if (!file) {
             alert('Please select a file first.');
             return;
         }
-        
+
         // Hide upload form and show loading animation
         uploadForm.style.display = 'none';
         document.querySelector('.upload-header').style.display = 'none';
         loading.style.display = 'block';
-        
+
         // Simulate progress steps
         setTimeout(() => {
             document.getElementById('step2').classList.add('active');
         }, 1000);
-        
+
         setTimeout(() => {
             document.getElementById('step3').classList.add('active');
         }, 2000);
-        
+
         // Submit form
         const formData = new FormData();
         formData.append('file', file);
-        
+
         fetch('/upload', {
             method: 'POST',
             body: formData
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => {
             console.error('Error:', error);
             alert('An error occurred while processing your file. Please try again.');
-            
+
             // Hide loading and show upload form again
             loading.style.display = 'none';
             uploadForm.style.display = 'block';
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (files.length > 0) {
             fileInput.files = files;
-            
+
             // Trigger change event
             const event = new Event('change', { bubbles: true });
             fileInput.dispatchEvent(event);

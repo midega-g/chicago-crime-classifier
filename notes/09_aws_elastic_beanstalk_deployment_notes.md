@@ -164,7 +164,7 @@ Finally, clean up the temporary file:
 rm policy-modified.json
 ```
 
-**Other services and resources that may require manual cleanup**  
+**Other services and resources that may require manual cleanup**
 In addition to the S3 bucket, Elastic Beanstalk does not always delete the following items automatically during environment termination:
 
 - **Application versions stored in S3** — While Elastic Beanstalk deletes its tracking records of versions, the actual source bundles (.zip files, etc.) often remain in the Elastic Beanstalk S3 bucket unless you explicitly choose to delete them during application deletion (via the console or `--delete-source-bundle` option with `eb delete-application`).

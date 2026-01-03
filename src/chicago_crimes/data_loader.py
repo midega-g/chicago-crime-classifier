@@ -1,17 +1,21 @@
-import pandas as pd
 import json
 from pathlib import Path
+
+import pandas as pd
+
 from chicago_crimes.config import REMOVE_COLS
 
 
-def load_data(file_path, usecols=None, parse_dates=['date']):
+def load_data(file_path, usecols=None, parse_dates=None):
     """Load data from CSV with gzip compression."""
-    return pd.read_csv(file_path, compression='gzip', usecols=usecols, parse_dates=parse_dates)
+    if parse_dates is None:
+        parse_dates = ["date"]
+    return pd.read_csv(file_path, compression="gzip", usecols=usecols, parse_dates=parse_dates)
 
 
 def get_feature_columns(data_path):
     """Dynamically determine which columns to include based on removal list."""
-    temp_df = pd.read_csv(data_path, compression='gzip', nrows=0)
+    temp_df = pd.read_csv(data_path, compression="gzip", nrows=0)
     all_cols = temp_df.columns.tolist()
     include_cols = [col for col in all_cols if col not in REMOVE_COLS]
     return include_cols
@@ -22,35 +26,34 @@ def load_location_mapping(mapping_file=None):
     if mapping_file is None:
         # Get the directory where this module is located
         current_dir = Path(__file__).parent
-        mapping_file = current_dir / 'location_description.json'
-    
-    with open(mapping_file, 'r') as file:
+        mapping_file = current_dir / "location_description.json"
+
+    with open(mapping_file, "r", encoding="utf-8") as file:
         return json.load(file)
 
 
 def prepare_features(df, location_mapping):
     """Extract temporal features and apply location mapping."""
     # Preserve ID column if it exists
-    id_col = df['id'].copy() if 'id' in df.columns else None
-    
+    id_col = df["id"].copy() if "id" in df.columns else None
+
     # Extract temporal features
-    df['hour'] = df['date'].dt.hour
-    df['day_of_week'] = df['date'].dt.weekday
-    df['month'] = df['date'].dt.month
-    df['quarter'] = df['date'].dt.quarter
+    df["hour"] = df["date"].dt.hour
+    df["day_of_week"] = df["date"].dt.weekday
+    df["month"] = df["date"].dt.month
+    df["quarter"] = df["date"].dt.quarter
 
     # Binary flags
-    df['is_night'] = ((df['hour'] >= 18) | (df['hour'] < 6)).astype(int)
-    df['is_weekend'] = (df['day_of_week'] >= 5).astype(int)
+    df["is_night"] = ((df["hour"] >= 18) | (df["hour"] < 6)).astype(int)
+    df["is_weekend"] = (df["day_of_week"] >= 5).astype(int)
 
     # Apply location mapping
-    df['location_group'] = df['location_description'].map(
-        location_mapping).fillna("Unknown/Other")
-    df.drop(columns=['date', 'location_description'], inplace=True)
-    
+    df["location_group"] = df["location_description"].map(location_mapping).fillna("Unknown/Other")
+    df.drop(columns=["date", "location_description"], inplace=True)
+
     # Re-add ID column if it existed
     if id_col is not None:
-        df['id'] = id_col
+        df["id"] = id_col
 
     return df
 
