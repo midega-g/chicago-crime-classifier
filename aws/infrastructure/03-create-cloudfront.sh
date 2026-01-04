@@ -27,12 +27,14 @@ log_section "CloudFront Distribution Setup"
 # -------------------------------------------------------------------
 log_info "Checking for existing CloudFront distribution..."
 
-EXISTING_DIST=$(aws --profile "$AWS_PROFILE" cloudfront list-distributions \
+EXISTING_DIST=$(aws cloudfront list-distributions \
+  --profile "$AWS_PROFILE" \
   --query "DistributionList.Items[?Comment=='$DISTRIBUTION_COMMENT'].Id | [0]" \
   --output text 2>/dev/null || echo "")
 
 if [[ -n "$EXISTING_DIST" && "$EXISTING_DIST" != "None" ]]; then
-    DOMAIN_NAME=$(aws --profile "$AWS_PROFILE" cloudfront get-distribution \
+    DOMAIN_NAME=$(aws cloudfront get-distribution \
+      --profile "$AWS_PROFILE" \
       --id "$EXISTING_DIST" \
       --query 'Distribution.DomainName' \
       --output text)
@@ -53,9 +55,10 @@ OAC_NAME="$CF_OAC_NAME"
 
 log_info "Checking for existing Origin Access Control..."
 
-EXISTING_OAC=$(aws --profile "$AWS_PROFILE" cloudfront list-origin-access-controls \
+EXISTING_OAC=$(aws cloudfront list-origin-access-controls \
   --query "OriginAccessControlList.Items[?Name=='$OAC_NAME'].Id | [0]" \
-  --output text 2>/dev/null || echo "")
+  --output text \
+  --profile "$AWS_PROFILE" 2>/dev/null || echo "")
 
 if [[ -n "$EXISTING_OAC" && "$EXISTING_OAC" != "None" ]]; then
     OAC_ID="$EXISTING_OAC"
@@ -63,8 +66,9 @@ if [[ -n "$EXISTING_OAC" && "$EXISTING_OAC" != "None" ]]; then
 else
     log_info "Creating new Origin Access Control..."
     # shellcheck disable=SC2140
-    OAC_RESPONSE=$(aws --profile "$AWS_PROFILE" cloudfront create-origin-access-control \
+    OAC_RESPONSE=$(aws cloudfront create-origin-access-control \
         --origin-access-control-config \
+        --profile "$AWS_PROFILE" \
         Name="$OAC_NAME",Description="OAC for Chicago Crimes static website",OriginAccessControlOriginType="s3",SigningBehavior="always",SigningProtocol="sigv4")
 
     OAC_ID=$(echo "$OAC_RESPONSE" | jq -r '.OriginAccessControl.Id')
@@ -135,7 +139,8 @@ EOF
 # -------------------------------------------------------------------
 log_info "Creating CloudFront distribution..."
 
-DISTRIBUTION_RESPONSE=$(aws --profile "$AWS_PROFILE" cloudfront create-distribution \
+DISTRIBUTION_RESPONSE=$(aws cloudfront create-distribution \
+  --profile "$AWS_PROFILE" \
   --distribution-config file://cloudfront-config.json)
 
 DISTRIBUTION_ID=$(echo "$DISTRIBUTION_RESPONSE" | jq -r '.Distribution.Id')
