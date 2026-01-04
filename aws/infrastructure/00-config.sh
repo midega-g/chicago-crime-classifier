@@ -42,8 +42,6 @@ export ERROR=" ${RED}error${NC}"
 # 4. Project-wide constants (override via .env when needed)
 # ────────────────────────────────────────────────────────────────────────────────
 
-export STAGE_NAME="dev"
-
 # AWS Core
 export REGION="${AWS_REGION}"
 export AWS_PROFILE="${AWS_PROFILE}"
@@ -57,12 +55,17 @@ export UPLOAD_BUCKET="chicago-crimes-uploads-bucket"
 export FUNCTION_NAME="chicago-crimes-lambda-predictor"
 export ECR_REPO="chicago-crimes-lambda-ecr"
 export ROLE_NAME="chicago-crimes-lambda-execution-role"
+export IMAGE_TAG="latest"
+export INLINE_POLICY_NAME="ChicagoCrimesLambdaPolicy"
+export LAMBDA_DESCRIPTION="Chicago Crimes Prediction - Processes uploaded crime data files using ML model"
+
 
 # DynamoDB
 export RESULTS_TABLE="chicago-crimes-dynamodb-results"
 
 # API Gateway
 export API_NAME="chicago-crimes-api-gateway"
+export STAGE_NAME="prod"
 
 # CloudFront
 export CF_OAC_NAME="chicago-crimes-oac"
@@ -150,3 +153,46 @@ print_config_summary() {
 
 # Uncomment next line if you want auto-print when sourcing (optional)
 # print_config_summary
+
+# ────────────────────────────────────────────────────────────────────────────────
+# 8. Helper functions for retrieving dynamic AWS resource values
+# ────────────────────────────────────────────────────────────────────────────────
+
+# Get ECR repository URI
+get_ecr_repo_uri() {
+    aws --profile "$AWS_PROFILE" ecr describe-repositories \
+      --repository-names "$ECR_REPO" \
+      --query 'repositories[0].repositoryUri' \
+      --output text 2>/dev/null || echo ""
+}
+
+# Verify if docker image exists in ECR
+verify_ecr_image_exists() {
+    aws ecr describe-repositories \
+	    --repository-names "$ECR_REPO" \
+	    --query 'repositories[0].repositoryUri' \
+	    --output text 2>/dev/null || echo ""
+}
+
+# Get API Gateway ID
+get_api_gateway_id() {
+    aws --profile "$AWS_PROFILE" apigateway get-rest-apis \
+      --query "items[?name=='$API_NAME'].id | [0]" \
+      --output text 2>/dev/null || echo ""
+}
+
+# Get Lambda function ARN
+get_lambda_function_arn() {
+    aws --profile "$AWS_PROFILE" lambda get-function \
+      --function-name "$FUNCTION_NAME" \
+      --query 'Configuration.FunctionArn' \
+      --output text 2>/dev/null || echo ""
+}
+
+# Get DynamoDB table status
+get_dynamodb_table_status() {
+    aws --profile "$AWS_PROFILE" dynamodb describe-table \
+      --table-name "$RESULTS_TABLE" \
+      --query 'Table.TableStatus' \
+      --output text 2>/dev/null || echo ""
+}
