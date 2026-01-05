@@ -1,6 +1,5 @@
 # flake8: noqa: E501
 import os
-import sys
 import json
 from io import BytesIO, StringIO
 from decimal import Decimal
@@ -145,10 +144,6 @@ class DecimalEncoder(json.JSONEncoder):
         if isinstance(o, Decimal):
             return float(o)
         return super(DecimalEncoder, self).default(o)
-
-
-# Add the src directory to Python path
-sys.path.append("/opt/src")
 
 # Initialize AWS clients with region
 REGION = os.environ.get("AWS_REGION", DEFAULT_REGION)

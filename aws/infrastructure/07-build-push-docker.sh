@@ -112,7 +112,7 @@ for attempt in {1..2}; do
 
     # Increase timeout based on your condition
     # or run restart docker
-    if timeout 900 docker push "$REPO_URI:$IMAGE_TAG"; then
+    if timeout 1500 docker push "$REPO_URI:$IMAGE_TAG"; then
         log_success "Push successful"
         break
     fi

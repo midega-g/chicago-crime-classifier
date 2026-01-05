@@ -53,12 +53,13 @@ export UPLOAD_BUCKET="chicago-crimes-uploads-bucket"
 
 # Lambda
 export FUNCTION_NAME="chicago-crimes-lambda-predictor"
-export ECR_REPO="chicago-crimes-lambda-ecr"
 export ROLE_NAME="chicago-crimes-lambda-execution-role"
 export IMAGE_TAG="latest"
 export INLINE_POLICY_NAME="ChicagoCrimesLambdaPolicy"
 export LAMBDA_DESCRIPTION="Chicago Crimes Prediction - Processes uploaded crime data files using ML model"
 
+# ECR
+export ECR_REPO="chicago-crimes-lambda-ecr"
 
 # DynamoDB
 export RESULTS_TABLE="chicago-crimes-dynamodb-results"
@@ -189,10 +190,16 @@ get_lambda_function_arn() {
       --output text 2>/dev/null || echo ""
 }
 
-# Get DynamoDB table status
-get_dynamodb_table_status() {
-    aws --profile "$AWS_PROFILE" dynamodb describe-table \
-      --table-name "$RESULTS_TABLE" \
-      --query 'Table.TableStatus' \
+# Get CloudFront distribution ID
+get_cloudfront_distribution_id() {
+    aws --profile "$AWS_PROFILE" cloudfront list-distributions \
+      --query "DistributionList.Items[?Comment=='$DISTRIBUTION_COMMENT'].Id" \
+      --output text 2>/dev/null || echo ""
+}
+
+# Get CloudFront distribution URL
+get_cloudfront_distribution_url() {
+    aws --profile "$AWS_PROFILE" cloudfront list-distributions \
+      --query "DistributionList.Items[?Comment=='$DISTRIBUTION_COMMENT'].DomainName" \
       --output text 2>/dev/null || echo ""
 }
