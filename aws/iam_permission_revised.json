@@ -8,10 +8,10 @@
         "s3:CreateBucket",
         "s3:ListBucket",
         "s3:GetBucketLocation",
-        "s3:HeadBucket",
+        "s3:ListBucket",
         "s3:PutBucketOwnershipControls",
-        "s3:PutPublicAccessBlock",
-        "s3:PutBucketLifecycleConfiguration",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:PutLifecycleConfiguration",
         "s3:PutBucketVersioning",
         "s3:PutBucketCors",
         "s3:PutBucketPolicy",
@@ -22,10 +22,8 @@
         "s3:ListBucketMultipartUploads",
         "s3:AbortMultipartUpload",
         "s3:ListMultipartUploadParts",
-        "s3:ListBucketVersions"
-        ,
-        "s3:PutBucketNotification",
-        "s3:PutBucketNotificationConfiguration"
+        "s3:ListBucketVersions",
+        "s3:PutBucketNotification"
       ],
       "Resource": [
         "arn:aws:s3:::*",
@@ -164,8 +162,7 @@
         "application-autoscaling:RegisterScalableTarget"
       ],
       "Resource": "*"
-    }
-    ,
+    },
     {
       "Sid": "CloudFrontInvalidation",
       "Effect": "Allow",
@@ -184,8 +181,7 @@
         "lambda:AddPermission"
       ],
       "Resource": "*"
-    }
-    ,
+    },
     {
       "Sid": "CleanupPermissions",
       "Effect": "Allow",
@@ -193,7 +189,6 @@
         "lambda:DeleteFunction",
         "lambda:RemovePermission",
         "apigateway:DELETE",
-        "apigateway:DeleteRestApi",
         "dynamodb:DeleteTable",
         "logs:DeleteLogGroup",
         "cloudfront:GetDistributionConfig",
@@ -214,8 +209,7 @@
         "iam:ListRolePolicies"
       ],
       "Resource": "*"
-    }
-    ,
+    },
     {
       "Sid": "LambdaManagement",
       "Effect": "Allow",
