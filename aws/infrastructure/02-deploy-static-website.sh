@@ -69,7 +69,7 @@ if [[ "$DRY_RUN" == "true" ]]; then
 fi
 
 log_info "Syncing static assets to S3..."
-run_aws aws s3 sync "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" "${SYNC_FLAGS[@]}"
+aws s3 sync "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" "${SYNC_FLAGS[@]}"
 
 ############################################
 # Explicit content-type handling
@@ -79,7 +79,7 @@ log_info "Applying explicit content types..."
 
 # HTML (short cache)
 if [[ -f "$STATIC_WEB_DIR/index.html" ]]; then
-  run_aws aws s3 cp "$STATIC_WEB_DIR/index.html" "s3://$STATIC_BUCKET/index.html" \
+  aws s3 cp "$STATIC_WEB_DIR/index.html" "s3://$STATIC_BUCKET/index.html" \
     --cache-control "max-age=300" \
     --content-type "text/html" \
     --region "$REGION" \
@@ -87,7 +87,7 @@ if [[ -f "$STATIC_WEB_DIR/index.html" ]]; then
 fi
 
 # JavaScript
-run_aws aws s3 cp "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
+aws s3 cp "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
   --recursive \
   --exclude "*" \
   --include "*.js" \
@@ -97,7 +97,7 @@ run_aws aws s3 cp "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
   ${DRY_RUN:+--dryrun}
 
 # CSS
-run_aws aws s3 cp "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
+aws s3 cp "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
   --recursive \
   --exclude "*" \
   --include "*.css" \
