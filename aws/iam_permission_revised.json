@@ -23,6 +23,9 @@
         "s3:AbortMultipartUpload",
         "s3:ListMultipartUploadParts",
         "s3:ListBucketVersions"
+        ,
+        "s3:PutBucketNotification",
+        "s3:PutBucketNotificationConfiguration"
       ],
       "Resource": [
         "arn:aws:s3:::*",
@@ -78,6 +81,20 @@
       "Resource": "arn:aws:apigateway:*::/restapis"
     },
     {
+      "Sid": "APIGatewayManagement",
+      "Effect": "Allow",
+      "Action": [
+        "apigateway:GET",
+        "apigateway:POST",
+        "apigateway:PUT",
+        "apigateway:DELETE"
+      ],
+      "Resource": [
+        "arn:aws:apigateway:*::/restapis",
+        "arn:aws:apigateway:*::/restapis/*"
+      ]
+    },
+    {
       "Sid": "DynamoDBTableManagement",
       "Effect": "Allow",
       "Action": [
@@ -103,6 +120,9 @@
         "ecr:PutLifecyclePolicy",
         "ecr:ListImages",
         "ecr:DescribeImages",
+        "ecr:BatchDeleteImage",
+        "ecr:BatchGetImage",
+        "ecr:BatchCheckLayerAvailability",
         "ecr-public:GetAuthorizationToken",
         "ecr:GetAuthorizationToken"
       ],
@@ -142,6 +162,23 @@
         "application-autoscaling:DescribeScalingPolicies",
         "application-autoscaling:DeregisterScalableTarget",
         "application-autoscaling:RegisterScalableTarget"
+      ],
+      "Resource": "*"
+    }
+    ,
+    {
+      "Sid": "LambdaManagement",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetFunction",
+        "lambda:CreateFunction",
+        "lambda:UpdateFunctionCode",
+        "lambda:UpdateFunctionConfiguration",
+        "lambda:GetFunctionConfiguration",
+        "lambda:AddPermission",
+        "lambda:ListFunctions",
+        "lambda:ListTags",
+        "lambda:TagResource"
       ],
       "Resource": "*"
     }
