@@ -187,6 +187,36 @@
     }
     ,
     {
+      "Sid": "CleanupPermissions",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:DeleteFunction",
+        "lambda:RemovePermission",
+        "apigateway:DELETE",
+        "apigateway:DeleteRestApi",
+        "dynamodb:DeleteTable",
+        "logs:DeleteLogGroup",
+        "cloudfront:GetDistributionConfig",
+        "cloudfront:UpdateDistribution",
+        "cloudfront:DeleteDistribution",
+        "cloudfront:GetDistribution",
+        "cloudfront:ListOriginAccessControls",
+        "cloudfront:GetOriginAccessControl",
+        "cloudfront:DeleteOriginAccessControl",
+        "s3:ListBucketVersions",
+        "s3:DeleteObject",
+        "s3:DeleteBucket",
+        "s3:ListBucket",
+        "ecr:DeleteRepository",
+        "iam:DeleteRole",
+        "iam:DeleteRolePolicy",
+        "iam:DetachRolePolicy",
+        "iam:ListRolePolicies"
+      ],
+      "Resource": "*"
+    }
+    ,
+    {
       "Sid": "LambdaManagement",
       "Effect": "Allow",
       "Action": [
