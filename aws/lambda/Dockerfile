@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     && rm -rf /tmp/reqs.txt
 
 # Copy source code
-COPY src/ src/
+COPY aws/src/ src/
 
 # Install the package in development mode so imports work
 RUN uv pip install --system --no-deps -e .
