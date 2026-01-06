@@ -19,3 +19,6 @@ todo.md
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+
+install
+THIRD_PARTY_LICENSES
