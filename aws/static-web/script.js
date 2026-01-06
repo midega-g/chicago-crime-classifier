@@ -1,5 +1,5 @@
 // Configuration - Update these URLs after deployment
-const API_GATEWAY_URL = 'https://24v19wx2lj.execute-api.af-south-1.amazonaws.com/prod';
+const API_GATEWAY_URL = 'https://ckmw34fd2k.execute-api.af-south-1.amazonaws.com/prod';
 const UPLOAD_BUCKET = 'chicago-crimes-uploads-bucket';
 
 document.addEventListener('DOMContentLoaded', function() {
