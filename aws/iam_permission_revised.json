@@ -76,6 +76,74 @@
         "apigateway:GET"
       ],
       "Resource": "arn:aws:apigateway:*::/restapis"
+    },
+    {
+      "Sid": "DynamoDBTableManagement",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:CreateTable",
+        "dynamodb:DescribeTable",
+        "dynamodb:ListTables",
+        "dynamodb:DescribeLimits",
+        "dynamodb:UpdateTable",
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:DeleteTable"
+      ],
+      "Resource": "arn:aws:dynamodb:*:076181803615:table/*"
+    },
+    {
+      "Sid": "ECRRepositoryManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:CreateRepository",
+        "ecr:DescribeRepositories",
+        "ecr:PutLifecyclePolicy",
+        "ecr:ListImages",
+        "ecr:DescribeImages",
+        "ecr-public:GetAuthorizationToken",
+        "ecr:GetAuthorizationToken"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IAMCreateAndAttach",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateRole",
+        "iam:PutRolePolicy",
+        "iam:AttachRolePolicy",
+        "iam:CreatePolicy",
+        "iam:GetRole",
+        "iam:TagRole"
+      ],
+      "Resource": "arn:aws:iam::076181803615:role/*"
+    },
+    {
+      "Sid": "SESManagement",
+      "Effect": "Allow",
+      "Action": [
+        "ses:GetIdentityVerificationAttributes",
+        "ses:VerifyEmailIdentity",
+        "ses:GetAccountSendingEnabled",
+        "ses:GetSendQuota",
+        "ses:SendEmail",
+        "ses:SendRawEmail"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "STSAndAutoScalingHelpers",
+      "Effect": "Allow",
+      "Action": [
+        "sts:GetServiceBearerToken",
+        "application-autoscaling:DescribeScalingPolicies",
+        "application-autoscaling:DeregisterScalableTarget",
+        "application-autoscaling:RegisterScalableTarget"
+      ],
+      "Resource": "*"
     }
   ]
 }
