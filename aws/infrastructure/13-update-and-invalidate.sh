@@ -27,16 +27,18 @@ fi
 API_URL="https://$API_ID.execute-api.$REGION.amazonaws.com/$STAGE_NAME"
 log_success "Found API Gateway: $API_URL"
 
-# Update script.js with API Gateway URL
-log_info "Updating script.js with API Gateway URL..."
+# Update script.js with API Gateway URL and Upload Bucket
+log_info "Updating script.js with API Gateway URL and Upload Bucket..."
 if [ -f "aws/static-web/script.js" ]; then
     # Create backup and use portable sed
     cp aws/static-web/script.js aws/static-web/script.js.bak
 
     # Use portable sed syntax that works on both GNU and BSD sed
     if sed "s|const API_GATEWAY_URL = '[^']*';|const API_GATEWAY_URL = '$API_URL';|g" \
-        aws/static-web/script.js.bak > aws/static-web/script.js; then
-        log_success "Updated script.js"
+        aws/static-web/script.js.bak | \
+       sed "s|const UPLOAD_BUCKET = '[^']*';|const UPLOAD_BUCKET = '$UPLOAD_BUCKET';|g" \
+        > aws/static-web/script.js; then
+        log_success "Updated script.js with API Gateway URL and Upload Bucket"
         rm aws/static-web/script.js.bak
     else
         log_error "Failed to update script.js"
@@ -130,7 +132,7 @@ fi
 CLOUDFRONT_URL=$(get_cloudfront_distribution_url)
 
 log_summary "UPDATE COMPLETE!"
-log_info "Updated script.js with API Gateway URL"
+log_info "Updated script.js with API Gateway URL and Upload Bucket"
 log_info "Re-uploaded static files to S3"
 log_info "Selectively invalidated CloudFront cache (HTML + JS only)"
 
