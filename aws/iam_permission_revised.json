@@ -167,6 +167,26 @@
     }
     ,
     {
+      "Sid": "CloudFrontInvalidation",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront:CreateInvalidation",
+        "cloudfront:GetInvalidation",
+        "cloudfront:ListInvalidations"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "LambdaPolicyRead",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetPolicy",
+        "lambda:AddPermission"
+      ],
+      "Resource": "*"
+    }
+    ,
+    {
       "Sid": "LambdaManagement",
       "Effect": "Allow",
       "Action": [
