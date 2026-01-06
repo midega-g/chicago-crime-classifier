@@ -31,14 +31,11 @@ EXISTING_API_ID=$(aws --profile "$AWS_PROFILE" apigateway get-rest-apis \
 
 if [[ -n "$EXISTING_API_ID" && "$EXISTING_API_ID" != "None" ]]; then
     API_ID="$EXISTING_API_ID"
-    log_warn "API Gateway already exists: $API_ID"
-    log_info "API Endpoint: ${YELLOW}https://$API_ID.execute-api.$REGION.amazonaws.com/$STAGE_NAME${NC}"
-    log_summary "Using existing API Gateway"
-    echo -e "${CYAN}Next:${NC} Run 05-create-dynamodb.sh"
+    log_warn "API Gateway already exists: ${YELLOW}$API_ID${NC}"
+    log_info "API Endpoint: ${BLUE}https://$API_ID.execute-api.$REGION.amazonaws.com/$STAGE_NAME${NC}"
+    log_summary "Using existing API Gateway ${CYAN}Next:${NC} Run 05-create-dynamodb.sh"
     exit 0
 fi
-
-log_info "Creating new API Gateway..."
 
 # -------------------------------------------------------------------
 # Step 1: Create REST API
@@ -50,7 +47,8 @@ API_RESPONSE=$(aws --profile "$AWS_PROFILE" apigateway create-rest-api \
     --description "Chicago Crimes ML API with proxy integration")
 
 API_ID=$(echo "$API_RESPONSE" | jq -r '.id')
-log_success "Created API with ID: $API_ID"
+log_success "Created API with ID: ${YELLOW}$API_ID${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Step 2: Get root resource ID
@@ -64,10 +62,11 @@ ROOT_RESOURCE_ID=$(echo "$RESOURCES_RESPONSE" | jq -r '.items[] | select(.path==
 
 if [[ -z "$ROOT_RESOURCE_ID" || "$ROOT_RESOURCE_ID" == "null" ]]; then
     ROOT_RESOURCE_ID=$(echo "$RESOURCES_RESPONSE" | jq -r '.items[0].id')
-    log_warn "Using first resource as root: $ROOT_RESOURCE_ID"
+    log_warn "Using first resource as root: ${YELLOW}$ROOT_RESOURCE_ID${NC}"
 else
-    log_info "Root resource ID: $ROOT_RESOURCE_ID"
+    log_info "Root resource ID: ${YELLOW}$ROOT_RESOURCE_ID${NC}"
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Step 3: Create proxy resource {proxy+}
@@ -78,7 +77,7 @@ EXISTING_PROXY_ID=$(echo "$RESOURCES_RESPONSE" | jq -r '.items[] | select(.pathP
 
 if [[ -n "$EXISTING_PROXY_ID" && "$EXISTING_PROXY_ID" != "null" ]]; then
     PROXY_RESOURCE_ID="$EXISTING_PROXY_ID"
-    log_info "Proxy resource already exists: $PROXY_RESOURCE_ID"
+    log_info "Proxy resource already exists: ${YELLOW}$PROXY_RESOURCE_ID${YELLOW}"
 else
     PROXY_RESOURCE_RESPONSE=$(aws --profile "$AWS_PROFILE" apigateway create-resource \
         --rest-api-id "$API_ID" \
@@ -86,8 +85,9 @@ else
         --path-part "{proxy+}")
 
     PROXY_RESOURCE_ID=$(echo "$PROXY_RESOURCE_RESPONSE" | jq -r '.id')
-    log_success "Created proxy resource: $PROXY_RESOURCE_ID"
+    log_success "Created proxy resource: ${YELLOW}$PROXY_RESOURCE_ID${NC}"
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # IMPORTANT NOTE FOR FUTURE READERS
@@ -108,10 +108,11 @@ if aws --profile "$AWS_PROFILE" apigateway put-method \
     --resource-id "$ROOT_RESOURCE_ID" \
     --http-method ANY \
     --authorization-type NONE >/dev/null 2>&1; then
-    log_success "ANY method created on root resource"
+    log_success "${YELLOW}ANY${NC} method created on root resource"
 else
-    log_warn "ANY method on root already exists"
+    log_warn "${YELLOW}ANY${NC} method on root already exists"
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Step 5: Create ANY method for proxy resource
@@ -124,23 +125,24 @@ if aws --profile "$AWS_PROFILE" apigateway put-method \
     --http-method ANY \
     --authorization-type NONE \
     --request-parameters '{"method.request.path.proxy":true}' >/dev/null 2>&1; then
-    log_success "ANY method created on proxy resource"
+    log_success "${YELLOW}ANY${NC} method created on proxy resource"
 else
-    log_warn "ANY method on proxy already exists"
+    log_warn "${YELLOW}ANY${NC} method on proxy already exists"
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Step 6: Deploy API
 # -------------------------------------------------------------------
-log_info "Deploying API to stage: $STAGE_NAME..."
+# log_info "Deploying API to stage: $STAGE_NAME..."
 
-if aws --profile "$AWS_PROFILE" apigateway create-deployment \
-    --rest-api-id "$API_ID" \
-    --stage-name "$STAGE_NAME" >/dev/null 2>&1; then
-    log_success "API deployed successfully"
-else
-    log_warn "API deployment failed"
-fi
+# if aws --profile "$AWS_PROFILE" apigateway create-deployment \
+#     --rest-api-id "$API_ID" \
+#     --stage-name "$STAGE_NAME" >/dev/null 2>&1; then
+#     log_success "API deployed successfully"
+# else
+#     log_warn "API deployment failed"
+# fi
 
 # -------------------------------------------------------------------
 # Final output
@@ -151,7 +153,6 @@ log_info "API Endpoint: ${YELLOW}https://$API_ID.execute-api.$REGION.amazonaws.c
 log_info "Root resource ID: ${YELLOW}$ROOT_RESOURCE_ID${NC}"
 log_info "Proxy resource ID: ${YELLOW}$PROXY_RESOURCE_ID${NC}"
 
-log_warn "Requests will return HTTP 500 until Lambda integration is configured"
+log_warn "Requests will return ${RED}HTTP 500${NC} until Lambda integration is configured"
 
-log_summary "API Gateway setup completed!"
-echo -e "${CYAN}Next:${NC} Run 05-create-dynamodb.sh"
+log_summary "API Gateway setup completed! ${CYAN}Next:${NC} Run 05-create-dynamodb.sh"

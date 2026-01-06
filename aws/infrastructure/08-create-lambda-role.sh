@@ -21,9 +21,8 @@ log_info "Checking for existing IAM role..."
 
 if aws --profile "$AWS_PROFILE" iam get-role \
     --role-name "$ROLE_NAME" >/dev/null 2>&1; then
-    log_warn "IAM role already exists: $ROLE_NAME"
-    log_summary "Using existing IAM role"
-    echo -e "${CYAN}Next:${NC} Run 09-setup-ses-email.sh"
+    log_warn "IAM role already exists: ${YELLOW}$ROLE_NAME${NC}"
+    log_summary "Using existing IAM role ${CYAN}Next:${NC} Run 09-setup-ses-email.sh"
     exit 0
 fi
 
@@ -52,14 +51,15 @@ EOF
 # -------------------------------------------------------------------
 # Create IAM role
 # -------------------------------------------------------------------
-log_info "Creating IAM role: $ROLE_NAME"
+log_info "Creating IAM role: ${YELLOW}$ROLE_NAME${NC}"
 
 aws --profile "$AWS_PROFILE" iam create-role \
     --role-name "$ROLE_NAME" \
     --tags Key=Project,Value=ChicagoCrimes Key=Env,Value=dev \
     --assume-role-policy-document file://lambda-trust-policy.json >/dev/null
 
-log_success "IAM role created: $ROLE_NAME"
+log_success "IAM role created: ${YELLOW}$ROLE_NAME${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Attach basic execution policy
@@ -71,6 +71,7 @@ aws --profile "$AWS_PROFILE" iam attach-role-policy \
     --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole >/dev/null
 
 log_success "Basic execution policy attached"
+echo ""
 
 # -------------------------------------------------------------------
 # Create custom permissions policy
@@ -132,6 +133,7 @@ aws --profile "$AWS_PROFILE" iam put-role-policy \
     --policy-document file://lambda-permissions-policy.json >/dev/null
 
 log_success "Custom permissions policy attached"
+echo ""
 
 # -------------------------------------------------------------------
 # Wait for IAM propagation
@@ -156,5 +158,4 @@ log_success "Lambda IAM role setup completed!"
 log_info "Role Name: ${YELLOW}$ROLE_NAME${NC}"
 log_info "Role ARN: ${YELLOW}arn:aws:iam::$ACCOUNT_ID:role/$ROLE_NAME${NC}"
 
-log_summary "IAM role ready for Lambda function!"
-echo -e "${CYAN}Next:${NC} Run 09-setup-ses-email.sh"
+log_summary "IAM role ready for Lambda function! ${CYAN}Next:${NC} Run 09-setup-ses-email.sh"

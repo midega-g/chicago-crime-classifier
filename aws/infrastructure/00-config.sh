@@ -57,9 +57,13 @@ export ROLE_NAME="chicago-crimes-lambda-execution-role"
 export IMAGE_TAG="latest"
 export INLINE_POLICY_NAME="ChicagoCrimesLambdaPolicy"
 export LAMBDA_DESCRIPTION="Chicago Crimes Prediction - Processes uploaded crime data files using ML model"
+export FUNCTION_RETRIES=12
 
 # ECR
 export ECR_REPO="chicago-crimes-lambda-ecr"
+export DOCKER_BUILD_ATTEMPTS=3
+export DOCKER_PUSH_TIMEOUT=1500
+export DOCKER_PUSH_RETRIES=3
 
 # DynamoDB
 export RESULTS_TABLE="chicago-crimes-dynamodb-results"
@@ -93,8 +97,7 @@ run_aws() {
     exit_code=$?
 
     if [[ $exit_code -eq 0 ]]; then
-        # Success - return the output for further processing
-        echo "$output"
+        # Success - do not echo output to keep logs clean
         return 0
     else
         # Failure - show the error
@@ -127,15 +130,22 @@ log_error() {
 }
 
 log_section() {
-    echo -e "\n${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${CYAN}$*${NC}"
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    local title="$*"
+    local length=${#title}
+    local padding=$(( (75 - length) / 2 ))
+    local left_pad=""
+    local right_pad=""
+    for ((i=0; i<padding; i++)); do left_pad+=" "; done
+    for ((i=0; i< (75 - length - padding); i++)); do right_pad+=" "; done
+    echo -e "\n${BLUE}┌─────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${BLUE}│${NC}${left_pad}${CYAN}${title}${NC}${right_pad}${BLUE}│${NC}"
+    echo -e "${BLUE}└─────────────────────────────────────────────────────────────────┘${NC}"
 }
 
 log_summary() {
-    echo -e "\n${GREEN}---------------------------------------------------------------${NC}"
+    echo -e "\n${GREEN}------------------------------------------------------------------------${NC}"
     echo -e "${SUCCESS} $*"
-    echo -e "${GREEN}---------------------------------------------------------------${NC}"
+    echo -e "${GREEN}------------------------------------------------------------------------${NC}"
 }
 
 # ────────────────────────────────────────────────────────────────────────────────

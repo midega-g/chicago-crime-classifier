@@ -20,11 +20,12 @@ log_info "Getting ECR repository URI..."
 IMAGE_URI="$(verify_ecr_image_exists)":"$IMAGE_TAG"
 
 if [[ -z "$IMAGE_URI" ]]; then
-    log_error "Could not retrieve valid image URI for ${ECR_REPO}:${IMAGE_TAG}"
+    log_error "Could not retrieve valid image URI for ${YELLOW}${ECR_REPO}:${IMAGE_TAG}${NC}"
     exit 1
 fi
 
-log_info "Using image: $IMAGE_URI"
+log_info "Using image: ${YELLOW}$IMAGE_URI${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Verify IAM role exists
@@ -37,13 +38,13 @@ ROLE_ARN=$(aws --profile "$AWS_PROFILE" iam get-role \
   --output text 2>/dev/null)
 
 if [[ -z "$ROLE_ARN" ]]; then
-    log_error "Failed to retrieve ARN for role $ROLE_NAME"
-    log_error "Make sure the role exists and the profile has iam:GetRole permission"
+    log_error "Failed to retrieve ARN for role ${YELLOW}$ROLE_NAME${NC}"
+    log_error "Make sure the role exists and the profile has ${YELLOW}iam:GetRole${NC} permission"
     exit 1
 fi
 
-log_info "Using role ARN: $ROLE_ARN"
-
+log_info "Using role ARN: ${YELLOW}$ROLE_ARN${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Check if Lambda function exists
@@ -65,6 +66,7 @@ if aws --profile "$AWS_PROFILE" lambda get-function \
         --function-name "$FUNCTION_NAME"
 
     log_success "Code update completed"
+    echo ""
 
     log_info "Updating function configuration..."
     aws --profile "$AWS_PROFILE" lambda update-function-configuration \
@@ -108,28 +110,29 @@ else
         log_error "AWS CLI may be hanging - try running the command manually"
         exit 1
     else
-        log_error "Failed to create Lambda function (exit code $CREATE_EXIT_CODE)"
+        log_error "Failed to create Lambda function (exit code ${RED}$CREATE_EXIT_CODE${NC})"
         exit 1
     fi
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Wait for function to be ready
 # -------------------------------------------------------------------
 log_info "Waiting for function to be ready..."
 
-for i in {1..12}; do
+for ((attempt=1; attempt<=$FUNCTION_RETRIES; attempt++)); do
   STATE=$(aws --profile "$AWS_PROFILE" lambda get-function-configuration \
     --function-name "$FUNCTION_NAME" \
     --query 'State' \
     --output text 2>/dev/null || echo "Unknown")
 
   if [[ "$STATE" == "Active" ]]; then
-    log_success "Lambda is active"
+    log_success "Lambda is ${GREEN}active${NC}"
     break
   fi
 
-  log_info "Current state: $STATE (retry $i/12)"
+  log_info "Current state: ${CYAN}$STATE${NC} (retry $attempt/$FUNCTION_RETRIES)"
   sleep 10
 done
 
@@ -137,11 +140,12 @@ done
 # Final output
 # -------------------------------------------------------------------
 log_success "Lambda function deployment completed!"
+
+echo ""
 log_info "Function Name: ${YELLOW}$FUNCTION_NAME${NC}"
 log_info "Image URI: ${YELLOW}$IMAGE_URI${NC}"
 log_info "Package Type: ${YELLOW}Container${NC}"
 log_info "Memory: ${YELLOW}2048 MB${NC}"
 log_info "Timeout: ${YELLOW}300 seconds${NC}"
 
-log_summary "Lambda function ready for integration!"
-echo -e "${CYAN}Next:${NC} Run 11-configure-s3-trigger.sh"
+log_summary "Lambda function ready for integration! ${CYAN}Next:${NC} Run 11-configure-s3-trigger.sh"

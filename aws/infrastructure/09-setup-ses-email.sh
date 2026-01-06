@@ -25,26 +25,27 @@ VERIFICATION_STATUS=$(aws ses get-identity-verification-attributes \
   --output text 2>/dev/null || echo "NotFound")
 
 if [[ "$VERIFICATION_STATUS" == "Success" ]]; then
-    log_success "Email already verified in SES: $ADMIN_EMAIL"
+    log_success "Email already ${GREEN}verified${NC} in SES"
 elif [[ "$VERIFICATION_STATUS" == "Pending" ]]; then
-    log_warn "Email verification pending for: $ADMIN_EMAIL"
+    log_warn "Email verification ${CYAN}pending${NC}"
     log_warn "Check your inbox and click the verification link."
 else
-    log_info "Email not verified. Sending verification email to: $ADMIN_EMAIL"
+    log_info "Email not verified. Sent a verification email. ${GREEN}Please verify${NC}"
 
     if aws ses verify-email-identity \
         --email-address "$ADMIN_EMAIL" \
         --profile "$AWS_PROFILE" \
         --region "$REGION" 2>/dev/null; then
-        log_success "Verification email sent to: $ADMIN_EMAIL"
+        log_success "Verification email sent to your registred email"
         log_warn "IMPORTANT: Check your email and click the verification link!"
         log_warn "Emails will not be sent until verification is complete."
     else
-        log_error "Failed to send verification email. Check if SES is available in region $REGION"
+        log_error "Failed to send verification email. Check if SES is available in region ${YELLOW}$REGION${NC}"
         log_info "SES availability varies by region. Check AWS Console if unsure."
         exit 1
     fi
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Check SES production access
@@ -63,6 +64,7 @@ if [[ "$SES_PRODUCTION_ENABLED" == "false" ]]; then
 else
     log_success "SES is in production mode (sending enabled)"
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Check SES sending quota
@@ -75,7 +77,7 @@ SES_QUOTA=$(aws --profile "$AWS_PROFILE" ses get-send-quota \
   --output text 2>/dev/null || echo "0")
 
 if [[ "$SES_QUOTA" != "0" ]]; then
-    log_success "SES sending quota: $SES_QUOTA emails/24h"
+    log_success "SES sending quota: ${YELLOW}$SES_QUOTA emails/24h${NC}"
 else
     log_warn "SES may be in sandbox mode - verify both sender and recipient emails"
 fi
@@ -84,9 +86,9 @@ fi
 # Final output
 # -------------------------------------------------------------------
 log_success "SES email setup completed!"
-log_info "Admin Email: ${YELLOW}$ADMIN_EMAIL${NC}"
+echo ""
+
 log_info "Is SES production access enabled? ${YELLOW}$SES_PRODUCTION_ENABLED${NC}"
-log_info "Sending Quota: ${YELLOW}$SES_QUOTA emails/24h${NC}"
 
 if [[ "$SES_PRODUCTION_ENABLED" == "false" || "$SES_QUOTA" == "0" ]]; then
     log_warn "To move out of SES sandbox mode:"
@@ -95,5 +97,4 @@ if [[ "$SES_PRODUCTION_ENABLED" == "false" || "$SES_QUOTA" == "0" ]]; then
     log_info "3. Complete the SES sending review process"
 fi
 
-log_summary "SES email service configured!"
-echo -e "${CYAN}Next:${NC} Run 10-deploy-lambda-function.sh"
+log_summary "SES email service configured! ${CYAN}Next:${NC} Run 10-deploy-lambda-function.sh"

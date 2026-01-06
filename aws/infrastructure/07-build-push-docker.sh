@@ -26,8 +26,9 @@ fi
 # Registry hostname only - very important for credential stability
 REGISTRY_HOST="${REPO_URI%%/*}"   # removes everything after first /
 
-log_info "Target registry: ${REGISTRY_HOST}"
-log_info "Full repository:  ${REPO_URI}"
+log_info "Target registry: ${YELLOW}${REGISTRY_HOST}${NC}"
+log_info "Full repository:  ${YELLOW}${REPO_URI}${NC}"
+echo ""
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Optional: skip build if image already exists (and SKIP_BUILD is set)
@@ -41,8 +42,8 @@ CURRENT_DIGEST=$(aws ecr describe-images \
     --output text 2>/dev/null || echo "None")
 
 if [[ "$CURRENT_DIGEST" != "None" && -n "${SKIP_BUILD:-}" ]]; then
-    log_success "Image $IMAGE_TAG already exists - skipping build"
-    log_info "URI: $REPO_URI:$IMAGE_TAG"
+    log_success "Image ${YELLOW}$IMAGE_TAG${NC} already exists - skipping build"
+    log_info "URI: ${YELLOW}$REPO_URI:$IMAGE_TAG${NC}"
     exit 0
 fi
 
@@ -53,8 +54,8 @@ log_info "Building Docker image..."
 
 cd "$(dirname "$0")/../.."
 
-for attempt in {1..2}; do
-    log_info "Build attempt $attempt/2..."
+for ((attempt=1; attempt<=$DOCKER_BUILD_ATTEMPTS; attempt++)); do
+    log_info "Build attempt $attempt/$DOCKER_BUILD_ATTEMPTS..."
     if DOCKER_BUILDKIT=1 docker buildx build \
         --platform linux/amd64 \
         -f aws/lambda/Dockerfile \
@@ -62,21 +63,22 @@ for attempt in {1..2}; do
         log_success "Build successful"
         break
     fi
-    [[ $attempt -eq 2 ]] && { log_error "Build failed after 2 attempts"; exit 1; }
+    [[ $attempt -eq $DOCKER_BUILD_ATTEMPTS ]] && { log_error "Build failed after $DOCKER_BUILD_ATTEMPTS attempts"; exit 1; }
     sleep 10
 done
-
+echo ""
 # ────────────────────────────────────────────────────────────────────────────────
 # Tag image
 # ────────────────────────────────────────────────────────────────────────────────
 log_info "Tagging image..."
 docker tag "$ECR_REPO:latest" "$REPO_URI:$IMAGE_TAG"
-log_success "Tagged: $REPO_URI:$IMAGE_TAG"
+log_success "Tagged: ${YELLOW}$REPO_URI:$IMAGE_TAG${NC}"
+echo ""
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Critical: Authenticate RIGHT BEFORE PUSH
 # ────────────────────────────────────────────────────────────────────────────────
-log_info "Authenticating with ECR (right before push)..."
+log_info "Authenticating with ECR before push..."
 
 # Get fresh token
 token=$(aws ecr get-login-password --region "$REGION" --profile "$AWS_PROFILE") \
@@ -89,7 +91,7 @@ log_success "ECR authentication completed"
 
 # Small delay - helps some credential helpers to settle
 sleep 2
-
+echo ""
 # ────────────────────────────────────────────────────────────────────────────────
 # Push with retry
 # ────────────────────────────────────────────────────────────────────────────────
@@ -98,9 +100,10 @@ sleep 2
 log_info "=== Pre-push Diagnostics ==="
 log_info "Image size: $(docker images "$REPO_URI:$IMAGE_TAG" --format "{{.Size}}")"
 log_info "Layer count: $(docker history "$REPO_URI:$IMAGE_TAG" | tail -n +2 | wc -l)"
+echo ""
 
-for attempt in {1..2}; do
-    log_info "Push attempt $attempt/2..."
+for ((attempt=1; attempt<=$DOCKER_PUSH_RETRIES; attempt++)); do
+    log_info "Push attempt $attempt..."
 
     # Re-auth before each serious push attempt (paranoid but effective)
     if [[ $attempt -gt 1 ]]; then
@@ -112,14 +115,15 @@ for attempt in {1..2}; do
 
     # Increase timeout based on your condition
     # or run restart docker
-    if timeout 1500 docker push "$REPO_URI:$IMAGE_TAG"; then
+    if timeout $DOCKER_PUSH_TIMEOUT docker push "$REPO_URI:$IMAGE_TAG"; then
         log_success "Push successful"
         break
     fi
 
     log_warn "Push attempt $attempt failed"
-    [[ $attempt -eq 3 ]] && { log_error "Failed to push after 2 attempts"; exit 1; }
+    [[ $attempt -eq $DOCKER_PUSH_RETRIES ]] && { log_error "Failed to push after $DOCKER_PUSH_RETRIES attempts"; exit 1; }
 done
+echo ""
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Optional: Clean up untagged images
@@ -146,6 +150,7 @@ if [[ "$OLD_IMAGES" != "[]" && -n "$OLD_IMAGES" ]]; then
 else
     log_info "No old images to clean up"
 fi
+echo ""
 
 # ────────────────────────────────────────────────────────────────────────────────
 # Final verification
@@ -153,12 +158,15 @@ fi
 
 log_info "Verifying image in ECR..."
 if [[ -n "$(verify_ecr_image_exists)" ]]; then
-    log_success "Image ${ECR_REPO}:${IMAGE_TAG} exists in ECR"
+    log_success "Image ${YELLOW}${ECR_REPO}:${IMAGE_TAG}${NC} exists in ECR"
 else
     log_error "Image not found in ECR after push"
     exit 1
 fi
 
 log_success "Docker build and push completed!"
+echo ""
+
 log_info "Image ready: ${YELLOW}$REPO_URI:$IMAGE_TAG${NC}"
-echo -e "${CYAN}Next:${NC} Run 08-create-lambda-role.sh"
+
+log_summary "Build and Push Completed. ${CYAN}Next:${NC} Run 08-create-lambda-role.sh"

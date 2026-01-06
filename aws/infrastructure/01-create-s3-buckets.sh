@@ -15,7 +15,8 @@ trap 'rm -f upload-lifecycle-policy.json upload-cors-policy.json' EXIT
 log_section "S3 Buckets Creation"
 
 log_info "Creating buckets for Chicago Crimes application..."
-log_info "FORCE_DELETE mode: ${FORCE_DELETE}"
+log_info "FORCE_DELETE mode: ${GREEN}${FORCE_DELETE}${NC}"
+echo ""
 
 ############################################
 # Helper: check if bucket has any objects
@@ -38,7 +39,7 @@ confirm_or_force_delete() {
 
   if [[ "$FORCE_DELETE" == "true" ]]; then
     log_warn "FORCE_DELETE enabled — deleting all objects in $bucket"
-    run_aws aws s3 rm "s3://$bucket" --recursive
+    aws s3 rm "s3://$bucket" --recursive
     return
   fi
 
@@ -47,7 +48,7 @@ confirm_or_force_delete() {
 
   if [[ "$confirm" == "yes" ]]; then
     log_info "Emptying bucket..."
-    run_aws aws s3 rm "s3://$bucket" --recursive
+    aws s3 rm "s3://$bucket" --recursive
   else
     log_info "Keeping existing bucket and contents"
   fi
@@ -58,8 +59,8 @@ confirm_or_force_delete() {
 ############################################
 log_info "Checking static website bucket..."
 
-if aws s3api head-bucket --bucket "$STATIC_BUCKET" 2>/dev/null; then
-  log_warn "Bucket $STATIC_BUCKET already exists"
+if aws s3api head-bucket --bucket "$STATIC_BUCKET" > /dev/null 2>/dev/null; then
+  log_warn "Bucket ${YELLOW}$STATIC_BUCKET${NC} already exists"
 
   if bucket_has_objects "$STATIC_BUCKET"; then
     log_warn "Bucket $STATIC_BUCKET contains objects"
@@ -67,19 +68,19 @@ if aws s3api head-bucket --bucket "$STATIC_BUCKET" 2>/dev/null; then
   fi
 else
   log_info "Creating static website bucket..."
-  run_aws aws s3 mb "s3://$STATIC_BUCKET" --region "$REGION"
-  log_success "Static bucket created: $STATIC_BUCKET"
+  aws s3 mb "s3://$STATIC_BUCKET" --region "$REGION" --profile "$AWS_PROFILE"
+  log_success "Static bucket created: ${YELLOW}$STATIC_BUCKET${NC}"
 fi
 
 log_info "Applying ownership controls and public access block (static bucket)..."
 
-run_aws aws s3api put-bucket-ownership-controls \
+aws s3api put-bucket-ownership-controls \
   --bucket "$STATIC_BUCKET" \
   --ownership-controls '{
     "Rules": [{"ObjectOwnership": "BucketOwnerEnforced"}]
   }' >/dev/null
 
-run_aws aws s3api put-public-access-block \
+aws s3api put-public-access-block \
   --bucket "$STATIC_BUCKET" \
   --public-access-block-configuration '{
     "BlockPublicAcls": true,
@@ -87,14 +88,15 @@ run_aws aws s3api put-public-access-block \
     "BlockPublicPolicy": true,
     "RestrictPublicBuckets": true
   }' >/dev/null
+echo ""
 
 ############################################
 # UPLOAD BUCKET
 ############################################
 log_info "Checking upload bucket..."
 
-if aws s3api head-bucket --bucket "$UPLOAD_BUCKET" 2>/dev/null; then
-  log_warn "Bucket $UPLOAD_BUCKET already exists"
+if aws s3api head-bucket --bucket "$UPLOAD_BUCKET" > /dev/null 2>/dev/null; then
+  log_warn "Bucket ${YELLOW}$UPLOAD_BUCKET${NC} already exists"
 
   if bucket_has_objects "$UPLOAD_BUCKET"; then
     log_warn "Bucket $UPLOAD_BUCKET contains objects"
@@ -102,19 +104,19 @@ if aws s3api head-bucket --bucket "$UPLOAD_BUCKET" 2>/dev/null; then
   fi
 else
   log_info "Creating upload bucket..."
-  run_aws aws s3 mb "s3://$UPLOAD_BUCKET" --region "$REGION"
-  log_success "Upload bucket created: $UPLOAD_BUCKET"
+  aws s3 mb "s3://$UPLOAD_BUCKET" --region "$REGION" --profile "$AWS_PROFILE"
+  log_success "Upload bucket created: ${YELLOW}$UPLOAD_BUCKET${NC}"
 fi
 
 log_info "Applying ownership controls and public access block (upload bucket)..."
 
-run_aws aws s3api put-bucket-ownership-controls \
+aws s3api put-bucket-ownership-controls \
   --bucket "$UPLOAD_BUCKET" \
   --ownership-controls '{
     "Rules": [{"ObjectOwnership": "BucketOwnerEnforced"}]
   }' >/dev/null
 
-run_aws aws s3api put-public-access-block \
+aws s3api put-public-access-block \
   --bucket "$UPLOAD_BUCKET" \
   --public-access-block-configuration '{
     "BlockPublicAcls": true,
@@ -144,7 +146,7 @@ cat > upload-lifecycle-policy.json <<EOF
 }
 EOF
 
-run_aws aws s3api put-bucket-lifecycle-configuration \
+aws s3api put-bucket-lifecycle-configuration \
   --bucket "$UPLOAD_BUCKET" \
   --lifecycle-configuration file://upload-lifecycle-policy.json >/dev/null
 
@@ -153,7 +155,7 @@ run_aws aws s3api put-bucket-lifecycle-configuration \
 ############################################
 log_info "Enabling versioning on upload bucket..."
 
-run_aws aws s3api put-bucket-versioning \
+aws s3api put-bucket-versioning \
   --bucket "$UPLOAD_BUCKET" \
   --versioning-configuration Status=Enabled >/dev/null
 
@@ -176,7 +178,7 @@ cat > upload-cors-policy.json <<EOF
 }
 EOF
 
-run_aws aws s3api put-bucket-cors \
+aws s3api put-bucket-cors \
   --bucket "$UPLOAD_BUCKET" \
   --cors-configuration file://upload-cors-policy.json >/dev/null
 
@@ -184,8 +186,9 @@ run_aws aws s3api put-bucket-cors \
 # SUMMARY
 ############################################
 log_success "S3 buckets configured successfully!"
+echo ""
+
 log_info "Static website bucket: ${YELLOW}$STATIC_BUCKET${NC}"
 log_info "Upload bucket: ${YELLOW}$UPLOAD_BUCKET${NC} (versioned, lifecycle enabled)"
 
-log_summary "S3 setup completed!"
-echo -e "${CYAN}Next:${NC} Run 02-deploy-static-website.sh"
+log_summary "S3 setup completed! ${CYAN}Next:${NC} Run 02-deploy-static-website.sh"

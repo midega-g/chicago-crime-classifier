@@ -23,11 +23,11 @@ REPO_URI=$(aws --profile "$AWS_PROFILE" ecr describe-repositories \
   --output text 2>/dev/null || echo "")
 
 if [[ -n "$REPO_URI" && "$REPO_URI" != "None" ]]; then
-    log_warn "ECR repository already exists: $REPO_URI"
-    log_summary "Using existing ECR repository"
-    echo -e "${CYAN}Next:${NC} Run 07-build-push-docker.sh"
+    log_warn "ECR repository already exists: ${YELLOW}$REPO_URI${NC}"
+    log_summary "Using existing ECR repository ${CYAN}Next:${NC} Run 07-build-push-docker.sh"
     exit 0
 fi
+echo ""
 
 log_info "Creating new ECR repository..."
 
@@ -46,7 +46,8 @@ aws --profile "$AWS_PROFILE" \
 
 REPO_URI=$(get_ecr_repo_uri)
 
-log_success "ECR repository created: $REPO_URI"
+log_success "ECR repository created: ${YELLOW}$REPO_URI${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Final output
@@ -55,8 +56,7 @@ log_success "ECR repository setup completed!"
 log_info "Repository URI: ${YELLOW}$REPO_URI${NC}"
 log_info "Repository Name: ${YELLOW}$ECR_REPO${NC}"
 
-log_summary "ECR repository ready for Docker images!"
-echo -e "${CYAN}Next:${NC} Run 07-build-push-docker.sh"
+log_summary "ECR repository ready for Docker images! ${CYAN}Next:${NC} Run 07-build-push-docker.sh"
 
 # # Lifecycle rule: keep only images tagged 'latest' + last 5 tagged images + delete rest after 7 days
 # aws ecr put-lifecycle-policy \

@@ -25,7 +25,8 @@ if ! aws --profile "$AWS_PROFILE" lambda get-function \
     exit 1
 fi
 
-log_info "Lambda function verified: $FUNCTION_NAME"
+log_info "Lambda function verified: ${YELLOW}$FUNCTION_NAME${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Add S3 permission to Lambda
@@ -42,6 +43,7 @@ if aws --profile "$AWS_PROFILE" lambda add-permission \
 else
     log_warn "S3 permission add failed (may already exist)"
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Create S3 notification configuration
@@ -54,7 +56,7 @@ if [ -z "$LAMBDA_ARN" ]; then
     exit 1
 fi
 
-log_info "Using Lambda ARN for trigger: ${LAMBDA_ARN}"
+log_info "Using Lambda ARN for trigger: ${YELLOW}${LAMBDA_ARN}${NC}"
 
 cat > s3-notification.json << EOF
 {
@@ -94,6 +96,7 @@ else
     log_info "Run 01-create-s3-buckets.sh first"
     exit 1
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Final output
@@ -104,5 +107,4 @@ log_info "Trigger Prefix: ${YELLOW}uploads/${NC}"
 log_info "Lambda Function: ${YELLOW}$FUNCTION_NAME${NC}"
 log_info "Events: ${YELLOW}s3:ObjectCreated:*${NC}"
 
-log_summary "S3 trigger configured successfully!"
-echo -e "${CYAN}Next:${NC} Run 12-configure-api-integration.sh"
+log_summary "S3 trigger configured successfully! ${CYAN}Next:${NC} Run 12-configure-api-integration.sh"

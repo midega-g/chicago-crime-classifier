@@ -31,27 +31,29 @@ if [[ ! -d "$STATIC_WEB_DIR" ]]; then
 fi
 
 log_info "Verifying S3 bucket exists..."
-if ! aws s3api head-bucket --bucket "$STATIC_BUCKET" 2>/dev/null; then
+if ! aws s3api head-bucket --bucket "$STATIC_BUCKET" > /dev/null 2>/dev/null; then
   log_error "Bucket $STATIC_BUCKET does not exist. Run 01-create-s3-buckets.sh first."
   exit 1
 fi
+echo ""
 
 ############################################
 # Deployment context (UX clarity)
 ############################################
 
 log_info "Deployment context:"
-log_info "  Source directory : $STATIC_WEB_DIR"
-log_info "  Target bucket    : s3://$STATIC_BUCKET/"
-log_info "  AWS region       : $REGION"
-log_info "  DRY_RUN mode     : $DRY_RUN"
+log_info "  Source directory : ${BLUE}$STATIC_WEB_DIR${NC}"
+log_info "  Target bucket    : ${BLUE}s3://$STATIC_BUCKET/${NC}"
+log_info "  AWS region       : ${YELLOW}$REGION"${NC}
+log_info "  DRY_RUN mode     : ${GREEN}$DRY_RUN${NC}"
+echo ""
 
 ############################################
 # Optional integrity logging
 ############################################
 
 FILE_COUNT=$(find "$STATIC_WEB_DIR" -type f | wc -l | tr -d ' ')
-log_info "Preparing to deploy $FILE_COUNT static files"
+log_info "Preparing to deploy ${GREEN}$FILE_COUNT static files${NC}"
 
 ############################################
 # S3 sync (bulk assets)
@@ -61,6 +63,7 @@ SYNC_FLAGS=(
   --delete
   --cache-control "max-age=86400"
   --region "$REGION"
+  --profile "$AWS_PROFILE"
 )
 
 if [[ "$DRY_RUN" == "true" ]]; then
@@ -70,6 +73,7 @@ fi
 
 log_info "Syncing static assets to S3..."
 aws s3 sync "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" "${SYNC_FLAGS[@]}"
+echo ""
 
 ############################################
 # Explicit content-type handling
@@ -105,20 +109,21 @@ aws s3 cp "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
   --cache-control "max-age=86400" \
   --region "$REGION" \
   ${DRY_RUN:+--dryrun}
+echo ""
 
 ############################################
 # Completion
 ############################################
 
 log_success "Static website deployment completed successfully!"
-log_info "Files deployed to: ${YELLOW}s3://$STATIC_BUCKET/${NC}"
+log_info "Files deployed to: ${BLUE}s3://$STATIC_BUCKET/${NC}"
 
 if [[ "$DRY_RUN" == "true" ]]; then
   log_warn "DRY_RUN was enabled — no actual changes were made"
 fi
+echo ""
 
 log_warn "Website is accessible only via CloudFront distribution (private bucket)"
-log_warn "Update API_GATEWAY_URL in script.js with your actual API Gateway endpoint"
+log_warn ${CYAN}OPTIONAL:${NC} "Update ${GREEN}API_GATEWAY_URL${NC} in ${GREEN}script.js${NC} with your actual API Gateway endpoint"
 
-log_summary "Static website deployment completed!"
-echo -e "${CYAN}Next:${NC} Run 03-create-cloudfront.sh"
+log_summary "Static website deployment completed! ${CYAN}Next:${NC} Run 03-create-cloudfront.sh"

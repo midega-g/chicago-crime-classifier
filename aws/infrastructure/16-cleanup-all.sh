@@ -8,9 +8,16 @@ source "$(dirname "$0")/00-config.sh" || {
   exit 1
 }
 
+# Global variables for temporary files
+CONFIG_FILE=""
+DISABLED_CONFIG_FILE=""
+
+# Global variables for resource IDs
+DISTRIBUTION_ID=""
+OAC_ID=""
+
 # Helper function to cleanup CloudFront distribution
-cleanup_cloudfront_distribution() {
-    local DISTRIBUTION_ID
+cleanup_cloudfront() {
     DISTRIBUTION_ID=$(get_cloudfront_distribution_id)
 
     if [ -z "$DISTRIBUTION_ID" ] || [ "$DISTRIBUTION_ID" = "None" ]; then
@@ -18,11 +25,9 @@ cleanup_cloudfront_distribution() {
         return
     fi
 
-    log_info "Disabling CloudFront distribution: $DISTRIBUTION_ID"
+    log_info "Disabling CloudFront distribution: ${YELLOW}$DISTRIBUTION_ID${NC}"
 
     # Create temporary files
-    local CONFIG_FILE
-    local DISABLED_CONFIG_FILE
     CONFIG_FILE=$(mktemp)
     DISABLED_CONFIG_FILE=$(mktemp)
 
@@ -61,13 +66,13 @@ cleanup_cloudfront_distribution() {
                         if aws --profile "$AWS_PROFILE" cloudfront delete-distribution \
                             --id "$DISTRIBUTION_ID" \
                             --if-match "$FRESH_ETAG" > /dev/null 2>&1; then
-                            log_success "CloudFront distribution $DISTRIBUTION_ID deleted"
+                            log_success "CloudFront distribution ${RED}$DISTRIBUTION_ID${NC} deleted"
                         else
-                            log_warn "Failed to delete CloudFront distribution $DISTRIBUTION_ID"
+                            log_warn "Failed to delete CloudFront distribution ${RED}$DISTRIBUTION_ID${NC}"
                         fi
                     fi
                 else
-                    log_warn "Timeout waiting for distribution $DISTRIBUTION_ID deployment"
+                    log_warn "Timeout waiting for distribution ${RED}$DISTRIBUTION_ID${NC} deployment"
                 fi
             fi
         fi
@@ -76,7 +81,6 @@ cleanup_cloudfront_distribution() {
 
 # Helper function to cleanup Origin Access Controls
 cleanup_origin_access_controls() {
-    local OAC_IDS
     OAC_IDS=$(aws --profile "$AWS_PROFILE" cloudfront list-origin-access-controls \
         --query "OriginAccessControlList.Items[?contains(Name, '$CF_OAC_NAME')].Id" \
         --output text 2>/dev/null || echo "")
@@ -98,7 +102,7 @@ cleanup_origin_access_controls() {
                 if aws --profile "$AWS_PROFILE" cloudfront delete-origin-access-control \
                     --id "$OAC_ID" \
                     --if-match "$OAC_ETAG" > /dev/null 2>&1; then
-                    log_success "Origin Access Control $OAC_ID deleted"
+                    log_success "Origin Access Control ${RED}$OAC_ID${NC} deleted"
                 else
                     log_warn "Failed to delete Origin Access Control $OAC_ID"
                 fi
@@ -113,7 +117,7 @@ cleanup_s3_bucket() {
     local bucket_type="$2"
 
     if ! aws --profile "$AWS_PROFILE" s3 ls "s3://$bucket_name" > /dev/null 2>&1; then
-        log_info "$bucket_type bucket $bucket_name not found"
+        log_info "$bucket_type bucket ${RED}$bucket_name${NC} not found"
         return
     fi
 
@@ -150,9 +154,9 @@ cleanup_s3_bucket() {
 
     # Delete bucket
     if aws --profile "$AWS_PROFILE" s3 rb "s3://$bucket_name" > /dev/null 2>&1; then
-        log_success "$bucket_type bucket $bucket_name deleted"
+        log_success "$bucket_type bucket ${RED}$bucket_name${NC} deleted"
     else
-        log_warn "Failed to delete $bucket_type bucket $bucket_name"
+        log_warn "Failed to delete $bucket_type bucket ${RED}$bucket_name${NC}"
     fi
 }
 
@@ -169,12 +173,12 @@ cleanup_cloudwatch_logs() {
         if aws --profile "$AWS_PROFILE" logs delete-log-group \
             --log-group-name "$LOG_GROUP" \
             --region "$REGION" > /dev/null 2>&1; then
-            log_success "CloudWatch log group $LOG_GROUP deleted"
+            log_success "CloudWatch log group ${RED}$LOG_GROUP${NC} deleted"
         else
-            log_warn "Failed to delete CloudWatch log group $LOG_GROUP"
+            log_warn "Failed to delete CloudWatch log group ${RED}$LOG_GROUP${NC}"
         fi
     else
-        log_info "CloudWatch log group $LOG_GROUP not found"
+        log_info "CloudWatch log group ${RED}$LOG_GROUP${NC} not found"
     fi
 }
 
@@ -188,23 +192,23 @@ cleanup_iam_resources() {
         --role-name "$ROLE_NAME" \
         --policy-name "$INLINE_POLICY_NAME" > /dev/null 2>&1; then
         deleted_policies+=("$INLINE_POLICY_NAME")
-        log_success "Inline policy $INLINE_POLICY_NAME deleted"
+        log_success "Inline policy ${RED}$INLINE_POLICY_NAME${NC} deleted"
     fi
 
     # Detach managed policy
     if aws --profile "$AWS_PROFILE" iam detach-role-policy \
         --role-name "$ROLE_NAME" \
         --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole" > /dev/null 2>&1; then
-        log_success "Managed policy AWSLambdaBasicExecutionRole detached from $ROLE_NAME"
+        log_success "Managed policy ${RED}AWSLambdaBasicExecutionRole${NC} detached from ${RED}$ROLE_NAME${NC}"
     fi
 
     # Delete IAM role
     if aws --profile "$AWS_PROFILE" iam delete-role \
         --role-name "$ROLE_NAME" > /dev/null 2>&1; then
         deleted_roles+=("$ROLE_NAME")
-        log_success "IAM role $ROLE_NAME deleted"
+        log_success "IAM role ${RED}$ROLE_NAME${NC} deleted"
     else
-        log_info "IAM role $ROLE_NAME not found"
+        log_info "IAM role ${RED}$ROLE_NAME${NC} not found"
     fi
 
     # Report deleted resources
@@ -231,81 +235,90 @@ fi
 log_info "Starting complete cleanup..."
 
 # Step 1: Delete Lambda function
-log_info "🗑️ Step 1/9: Deleting Lambda function..."
+log_info "${RED}Step 1/9${NC}: Deleting Lambda function..."
 if aws --profile "$AWS_PROFILE" lambda delete-function \
     --function-name "$FUNCTION_NAME" \
     --region "$REGION" > /dev/null 2>&1; then
-    log_success "Lambda function $FUNCTION_NAME deleted"
+    log_success "Lambda function ${RED}$FUNCTION_NAME${NC} deleted"
 else
-    log_info "Lambda function $FUNCTION_NAME not found"
+    log_info "Lambda function ${RED}$FUNCTION_NAME${NC} not found"
 fi
+echo ""
 
 # Step 2: Delete API Gateway
-log_info "🗑️ Step 2/9: Deleting API Gateway..."
+log_info "${RED}Step 2/9${NC}: Deleting API Gateway..."
 API_ID=$(get_api_gateway_id)
 if [ ! -z "$API_ID" ] && [ "$API_ID" != "None" ]; then
     if aws --profile "$AWS_PROFILE" apigateway delete-rest-api \
         --rest-api-id "$API_ID" \
         --region "$REGION" > /dev/null 2>&1; then
-        log_success "API Gateway $API_ID deleted"
+        log_success "API Gateway ${RED}$API_ID${NC} deleted"
     else
         log_warn "Failed to delete API Gateway $API_ID"
     fi
 else
-    log_info "API Gateway $API_NAME not found"
+    log_info "API Gateway ${RED}$API_NAME${NC} not found"
 fi
+echo ""
 
 # Step 3: Delete DynamoDB table
-log_info "🗑️ Step 3/9: Deleting DynamoDB table..."
+log_info "${RED}Step 3/9${NC}: Deleting DynamoDB table..."
 if aws --profile "$AWS_PROFILE" dynamodb delete-table \
     --table-name "$RESULTS_TABLE" \
     --region "$REGION" > /dev/null 2>&1; then
-    log_success "DynamoDB table $RESULTS_TABLE deleted"
+    log_success "DynamoDB table ${RED}$RESULTS_TABLE${NC} deleted"
 else
-    log_info "DynamoDB table $RESULTS_TABLE not found"
+    log_info "DynamoDB table ${RED}$RESULTS_TABLE${NC} not found"
 fi
+echo ""
 
 # Step 4: Delete CloudWatch logs
-log_info "🗑️ Step 4/9: Deleting CloudWatch logs..."
+log_info "${RED}Step 4/9${NC}: Deleting CloudWatch logs..."
 cleanup_cloudwatch_logs
+echo ""
 
 # Step 5: Delete CloudFront distribution
-log_info "🗑️ Step 5/9: Deleting CloudFront distribution..."
-cleanup_cloudfront_distribution
+log_info "${RED}Step 5/9${NC}: Deleting CloudFront distribution..."
+cleanup_cloudfront
+echo ""
 
 # Step 6: Delete Origin Access Controls
-log_info "🗑️ Step 6/9: Deleting Origin Access Controls..."
+log_info "${RED}Step 6/9${NC}: Deleting Origin Access Controls..."
 cleanup_origin_access_controls
+echo ""
 
 # Step 7: Delete S3 buckets
-log_info "🗑️ Step 7/9: Deleting S3 buckets..."
+log_info "${RED}Step 7/9${NC}: Deleting S3 buckets..."
 cleanup_s3_bucket "$STATIC_BUCKET" "static"
 cleanup_s3_bucket "$UPLOAD_BUCKET" "upload"
+echo ""
 
 # Step 8: Delete ECR repository
-log_info "🗑️ Step 8/9: Deleting ECR repository..."
+log_info "${RED}Step 8/9${NC}: Deleting ECR repository..."
 if aws --profile "$AWS_PROFILE" ecr delete-repository \
     --repository-name "$ECR_REPO" \
     --region "$REGION" \
     --force > /dev/null 2>&1; then
-    log_success "ECR repository $ECR_REPO deleted"
+    log_success "ECR repository ${RED}$ECR_REPO${NC} deleted"
 else
-    log_info "ECR repository $ECR_REPO not found"
+    log_info "ECR repository ${RED}$ECR_REPO${NC} not found"
 fi
+echo ""
 
 # Step 9: Delete IAM roles and policies
-log_info "🗑️ Step 9/9: Deleting IAM roles and policies..."
+log_info "${RED}Step 9/9${NC}: Deleting IAM roles and policies..."
 cleanup_iam_resources
 
-log_summary "CLEANUP COMPLETE!"
+log_section "CLEANUP COMPLETE!"
 log_success "All AWS resources have been deleted:"
-log_info "Lambda function: ${YELLOW}$FUNCTION_NAME${NC}"
-log_info "API Gateway: ${YELLOW}$API_NAME${NC}"
-log_info "DynamoDB table: ${YELLOW}$RESULTS_TABLE${NC}"
-log_info "CloudWatch logs: ${YELLOW}/aws/lambda/$FUNCTION_NAME${NC}"
-log_info "CloudFront distribution and OAC"
-log_info "S3 buckets: ${YELLOW}$STATIC_BUCKET, $UPLOAD_BUCKET${NC}"
-log_info "ECR repository: ${YELLOW}$ECR_REPO${NC}"
-log_info "IAM roles and policies: ${YELLOW}$ROLE_NAME, $INLINE_POLICY_NAME${NC}"
+log_info "Lambda function: ${RED}$FUNCTION_NAME${NC}"
+log_info "API Gateway: ${RED}$API_NAME${NC}"
+log_info "DynamoDB table: ${RED}$RESULTS_TABLE${NC}"
+log_info "CloudWatch logs: ${RED}/aws/lambda/$FUNCTION_NAME${NC}"
+log_info "CloudFront distribution: ${RED}$DISTRIBUTION_ID${NC} and OAC: ${RED}$OAC_ID${NC}"
+log_info "S3 buckets: ${RED}$STATIC_BUCKET, $UPLOAD_BUCKET${NC}"
+log_info "ECR repository: ${RED}$ECR_REPO${NC}"
+log_info "IAM roles and policies: ${RED}$ROLE_NAME, $INLINE_POLICY_NAME${NC}"
 
 log_warn "All project resources have been permanently removed"
+echo ""

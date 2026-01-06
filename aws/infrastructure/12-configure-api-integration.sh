@@ -24,7 +24,8 @@ if [[ -z "$API_ID" || "$API_ID" == "None" ]]; then
     exit 1
 fi
 
-log_success "Found API Gateway: $API_ID"
+log_success "Found API Gateway: ${YELLOW}$API_ID${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Get root resource ID for root method integration
@@ -41,7 +42,8 @@ if [[ -z "$ROOT_RESOURCE_ID" || "$ROOT_RESOURCE_ID" == "None" ]]; then
     exit 1
 fi
 
-log_success "Found root resource: $ROOT_RESOURCE_ID"
+log_success "Found root resource: ${YELLOW}$ROOT_RESOURCE_ID${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Get proxy resource ID
@@ -58,7 +60,8 @@ if [[ -z "$PROXY_RESOURCE_ID" || "$PROXY_RESOURCE_ID" == "None" ]]; then
     exit 1
 fi
 
-log_success "Found proxy resource: $PROXY_RESOURCE_ID"
+log_success "Found proxy resource: ${YELLOW}$PROXY_RESOURCE_ID${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Configure Lambda integration for root resource
@@ -87,9 +90,10 @@ elif echo "$ROOT_INTEGRATION_RESULT" | grep -Eqi "Conflict|Already|exists|409"; 
     log_info "Root integration already exists"
 else
     log_error "Root integration failed"
-    echo "$ROOT_INTEGRATION_RESULT" >&2
+    echo "${RED}$ROOT_INTEGRATION_RESULT${NC}" >&2
     exit 1
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Configure Lambda integration for proxy resource
@@ -110,9 +114,10 @@ elif echo "$PROXY_INTEGRATION_RESULT" | grep -Eqi "Conflict|Already|exists|409";
     log_info "Proxy integration already exists"
 else
     log_error "Proxy integration failed"
-    echo "$PROXY_INTEGRATION_RESULT" >&2
+    echo "${RED}$PROXY_INTEGRATION_RESULT${NC}" >&2
     exit 1
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Add Lambda permission for API Gateway
@@ -137,6 +142,7 @@ else
         log_warn "Failed to add API Gateway permission (may already exist)"
     fi
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Deploy API
@@ -147,10 +153,11 @@ if aws --profile "$AWS_PROFILE" apigateway create-deployment \
     --rest-api-id "$API_ID" \
     --stage-name "$STAGE_NAME" \
     --stage-description "Deployment $(date +%Y-%m-%d_%H:%M:%S)" >/dev/null 2>&1; then
-    log_success "API Gateway deployed"
+    log_success "${GREEN}API Gateway deployed${NC}"
 else
-    log_warn "API deployment failed"
+    log_warn "${RED}API deployment failed${NC}"
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Verifying Deployment Status
@@ -166,11 +173,12 @@ STAGE_DEPLOYMENT_ID=$(aws --profile "$AWS_PROFILE" apigateway get-stage \
     --output text 2>/dev/null)
 
 if [[ -n "$STAGE_DEPLOYMENT_ID" ]]; then
-    log_success "Stage $STAGE_NAME is deployed with ID: $STAGE_DEPLOYMENT_ID"
+    log_success "Stage $STAGE_NAME is deployed with ID: ${YELLOW}$STAGE_DEPLOYMENT_ID${NC}"
 else
-    log_error "Stage $STAGE_NAME has no deployment associated"
+    log_error "Stage ${YELLOW}$STAGE_NAME${NC} has no deployment associated"
     exit 1
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Test API endpoint
@@ -180,7 +188,7 @@ API_ENDPOINT="https://$API_ID.execute-api.$REGION.amazonaws.com/$STAGE_NAME"
 log_info "Testing API Gateway endpoint..."
 
 if command -v curl >/dev/null 2>&1; then
-    log_info "Testing: $API_ENDPOINT/health"
+    log_info "Testing: ${BLUE}$API_ENDPOINT/health${NC}"
 
     # Wait a moment for deployment to propagate
     sleep 3
@@ -192,25 +200,25 @@ if command -v curl >/dev/null 2>&1; then
             log_success "API health check passed on attempt $attempt"
             break
         elif [[ "$attempt" -eq 3 ]]; then
-            log_warn "API health check failed after 3 attempts (code $HTTP_CODE)"
+            log_warn "API health check failed after 3 attempts (code ${RED}$HTTP_CODE${NC})"
             log_warn "This may indicate Lambda function issues - check CloudWatch logs"
         else
-            log_info "Health check attempt $attempt failed (code $HTTP_CODE), retrying..."
+            log_info "Health check attempt $attempt failed (code ${RED}$HTTP_CODE${NC}), retrying..."
             sleep 5
         fi
     done
 else
     log_info "curl not available - skipping API test"
 fi
+echo ""
 
 # -------------------------------------------------------------------
 # Final output
 # -------------------------------------------------------------------
 log_success "API Gateway Lambda integration completed!"
 log_info "API ID: ${YELLOW}$API_ID${NC}"
-log_info "API Endpoint: ${YELLOW}$API_ENDPOINT${NC}"
+log_info "API Endpoint: ${BLUE}$API_ENDPOINT${NC}"
 log_info "Lambda Function: ${YELLOW}$FUNCTION_NAME${NC}"
 log_info "Integration Type: ${YELLOW}AWS_PROXY${NC}"
 
-log_summary "API Gateway integration configured successfully!"
-echo -e "${CYAN}Next:${NC} Test the complete system or run 14-full-deployment.sh"
+log_summary "API Gateway integration configured successfully! ${CYAN}Next:${NC} Test the complete system or run 14-full-deployment.sh"

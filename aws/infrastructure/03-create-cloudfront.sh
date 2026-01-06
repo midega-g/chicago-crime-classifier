@@ -39,14 +39,14 @@ if [[ -n "$EXISTING_DIST" && "$EXISTING_DIST" != "None" ]]; then
       --query 'Distribution.DomainName' \
       --output text)
 
-    log_warn "CloudFront distribution already exists: $EXISTING_DIST"
-    log_info "Domain Name: ${YELLOW}https://$DOMAIN_NAME${NC}"
-    log_summary "Using existing CloudFront distribution"
-    echo -e "${CYAN}Next:${NC} Run 04-create-api-gateway.sh"
+    log_warn "CloudFront distribution already exists: ${YELLOW}$EXISTING_DIST${NC}"
+    log_info "Domain Name: ${BLUE}https://$DOMAIN_NAME${NC}"
+    log_summary "Using existing CloudFront distribution ${CYAN}Next:${NC} Run 04-create-api-gateway.sh"
     exit 0
 fi
 
 log_info "Creating new CloudFront distribution..."
+echo ""
 
 # -------------------------------------------------------------------
 # Step 1: Create or reuse Origin Access Control (OAC)
@@ -72,7 +72,7 @@ else
         Name="$OAC_NAME",Description="OAC for Chicago Crimes static website",OriginAccessControlOriginType="s3",SigningBehavior="always",SigningProtocol="sigv4")
 
     OAC_ID=$(echo "$OAC_RESPONSE" | jq -r '.OriginAccessControl.Id')
-    log_success "Created OAC with ID: $OAC_ID"
+    log_success "Created OAC with ID: ${YELLOW}$OAC_ID${NC}"
 fi
 
 # -------------------------------------------------------------------
@@ -146,7 +146,8 @@ DISTRIBUTION_RESPONSE=$(aws cloudfront create-distribution \
 DISTRIBUTION_ID=$(echo "$DISTRIBUTION_RESPONSE" | jq -r '.Distribution.Id')
 DOMAIN_NAME=$(echo "$DISTRIBUTION_RESPONSE" | jq -r '.Distribution.DomainName')
 
-log_success "Distribution created with ID: $DISTRIBUTION_ID"
+log_success "Distribution created with ID: ${YELLOW}$DISTRIBUTION_ID${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Step 4: Update S3 bucket policy to allow CloudFront access
@@ -173,7 +174,7 @@ cat > s3-cloudfront-policy.json << EOF
 }
 EOF
 
-run_aws aws --profile "$AWS_PROFILE" s3api put-bucket-policy \
+aws --profile "$AWS_PROFILE" s3api put-bucket-policy \
   --bucket "$STATIC_BUCKET" \
   --policy file://s3-cloudfront-policy.json
 
@@ -196,22 +197,23 @@ cat > upload-cors-policy.json << EOF
 }
 EOF
 
-run_aws aws --profile "$AWS_PROFILE" s3api put-bucket-cors \
+aws --profile "$AWS_PROFILE" s3api put-bucket-cors \
   --bucket "$UPLOAD_BUCKET" \
   --cors-configuration file://upload-cors-policy.json
+echo ""
 
 # -------------------------------------------------------------------
 # Final output
 # -------------------------------------------------------------------
 log_success "CloudFront distribution created successfully!"
 log_info "Distribution ID: ${YELLOW}$DISTRIBUTION_ID${NC}"
-log_info "Domain Name: ${YELLOW}https://$DOMAIN_NAME${NC}"
+log_info "Domain Name: ${BLUE}https://$DOMAIN_NAME${NC}"
 log_warn "Status: Deploying (may take 10-15 minutes)"
+echo ""
 
-log_warn "IMPORTANT:"
-log_info "1. Update API_GATEWAY_URL in static-web/script.js"
-log_info "2. Redeploy static site: 02-deploy-static-website.sh"
+log_warn "${CYAN}IMPORTANT:${NC}"
+log_info "1. Update ${GREEN}API_GATEWAY_URL${NC} in ${BLUE}aws/static-web/script.js${NC}"
+log_info "2. Redeploy static site: ${GREEN}02-deploy-static-website.sh${NC}"
 log_info "3. Invalidate cache if needed"
 
-log_summary "CloudFront distribution setup completed!"
-echo -e "${CYAN}Next:${NC} Run 04-create-api-gateway.sh"
+log_summary "CloudFront distribution setup completed! ${CYAN}Next:${NC} Run 04-create-api-gateway.sh"

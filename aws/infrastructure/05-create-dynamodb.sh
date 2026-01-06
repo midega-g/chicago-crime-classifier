@@ -25,19 +25,19 @@ if aws --profile "$AWS_PROFILE" dynamodb describe-table \
       --query 'Table.TableStatus' \
       --output text)
 
-    log_warn "DynamoDB table already exists: $RESULTS_TABLE"
-    log_info "Table Status: ${YELLOW}$TABLE_STATUS${NC}"
-    log_summary "Using existing DynamoDB table"
-    echo -e "${CYAN}Next:${NC} Run 06-create-ecr-repository.sh"
+    log_warn "DynamoDB table already exists: ${YELLOW}$RESULTS_TABLE${NC}"
+    log_info "Table Status: ${GREEN}$TABLE_STATUS${NC}"
+    log_summary "Using existing DynamoDB table ${CYAN}Next:${NC} Run 06-create-ecr-repository.sh"
     exit 0
 fi
+echo ""
 
 log_info "Creating new DynamoDB table..."
 
 # -------------------------------------------------------------------
 # Create DynamoDB table
 # -------------------------------------------------------------------
-log_info "Creating DynamoDB table: $RESULTS_TABLE"
+log_info "Creating DynamoDB table"
 
 aws --profile "$AWS_PROFILE" dynamodb create-table \
     --table-name "$RESULTS_TABLE" \
@@ -47,7 +47,8 @@ aws --profile "$AWS_PROFILE" dynamodb create-table \
         AttributeName=file_key,KeyType=HASH \
     --billing-mode PAY_PER_REQUEST > /dev/null 2>&1;
 
-log_success "DynamoDB table created: $RESULTS_TABLE"
+log_success "DynamoDB table created: ${YELLOW}$RESULTS_TABLE${NC}"
+echo ""
 
 # -------------------------------------------------------------------
 # Wait for table to be active
@@ -62,16 +63,17 @@ TABLE_STATUS=$(aws --profile "$AWS_PROFILE" dynamodb describe-table \
   --query 'Table.TableStatus' \
   --output text)
 
-log_success "Table is now active: $TABLE_STATUS"
+log_success "Table is now active: ${GREEN}$TABLE_STATUS${NC}"
 
 # -------------------------------------------------------------------
 # Final output
 # -------------------------------------------------------------------
 log_success "DynamoDB table setup completed!"
+echo ""
+
 log_info "Table Name: ${YELLOW}$RESULTS_TABLE${NC}"
 log_info "Primary Key: ${YELLOW}file_key (String)${NC}"
 log_info "Billing Mode: ${YELLOW}PAY_PER_REQUEST${NC}"
-log_info "Table Status: ${YELLOW}$TABLE_STATUS${NC}"
+log_info "Table Status: ${GREEN}$TABLE_STATUS${NC}"
 
-log_summary "DynamoDB table ready for storing processing results!"
-echo -e "${CYAN}Next:${NC} Run 06-create-ecr-repository.sh"
+log_summary "DynamoDB table ready! ${CYAN}Next:${NC} Run 06-create-ecr-repository.sh"

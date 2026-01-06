@@ -13,19 +13,21 @@ log_section "Update Static Files and Invalidate Cache"
 log_info "Starting static files update..."
 log_info "Static Bucket: ${YELLOW}$STATIC_BUCKET${NC}"
 log_info "Region: ${YELLOW}$REGION${NC}"
+echo ""
 
 # Get API Gateway URL
 log_info "Getting API Gateway URL..."
 API_ID=$(get_api_gateway_id)
 
 if [ -z "$API_ID" ] || [ "$API_ID" = "None" ]; then
-    log_error "API Gateway '$API_NAME' not found"
+    log_error "API Gateway ${YELLOW}$API_NAME${NC} not found"
     log_error "Run 04-create-api-gateway.sh first"
     exit 1
 fi
 
 API_URL="https://$API_ID.execute-api.$REGION.amazonaws.com/$STAGE_NAME"
-log_success "Found API Gateway: $API_URL"
+log_success "Found API Gateway: ${BLUE}$API_URL${NC}"
+echo ""
 
 # Update script.js with API Gateway URL and Upload Bucket
 log_info "Updating script.js with API Gateway URL and Upload Bucket..."
@@ -46,9 +48,10 @@ if [ -f "aws/static-web/script.js" ]; then
         exit 1
     fi
 else
-    log_error "aws/static-web/script.js not found"
+    log_error "${BLUE}aws/static-web/script.js${NC} not found"
     exit 1
 fi
+echo ""
 
 # Upload static files to S3 with differentiated cache control
 log_info "Uploading static files to S3..."
@@ -77,6 +80,7 @@ aws --profile "$AWS_PROFILE" s3 sync aws/static-web/ s3://$STATIC_BUCKET/ \
     --region "$REGION" > /dev/null 2>&1
 
 log_success "Static files uploaded successfully"
+echo ""
 
 # Get CloudFront distribution and invalidate cache
 log_info "Invalidating CloudFront cache..."
@@ -87,7 +91,7 @@ if [ -z "$DISTRIBUTION_ID" ] || [ "$DISTRIBUTION_ID" = "None" ]; then
     exit 1
 fi
 
-log_success "Found CloudFront distribution: $DISTRIBUTION_ID"
+log_success "Found CloudFront distribution: ${YELLOW}$DISTRIBUTION_ID${NC}"
 
 # Create selective cache invalidation (only for files that change)
 INVALIDATION_ID=$(aws --profile "$AWS_PROFILE" cloudfront create-invalidation \
@@ -97,7 +101,7 @@ INVALIDATION_ID=$(aws --profile "$AWS_PROFILE" cloudfront create-invalidation \
     --output text 2>/dev/null || echo "")
 
 if [ ! -z "$INVALIDATION_ID" ] && [ "$INVALIDATION_ID" != "None" ]; then
-    log_success "Cache invalidation created: $INVALIDATION_ID"
+    log_success "Cache invalidation created: ${YELLOW}$INVALIDATION_ID${NC}"
     log_info "Waiting for invalidation to complete (this may take 2-5 minutes)..."
 
     # Poll invalidation status with AWS CLI instead of timeout
@@ -136,5 +140,5 @@ log_info "Updated script.js with API Gateway URL and Upload Bucket"
 log_info "Re-uploaded static files to S3"
 log_info "Selectively invalidated CloudFront cache (HTML + JS only)"
 
-log_success "Access your application: https://$CLOUDFRONT_URL"
+log_success "Access your application: ${BLUE}https://$CLOUDFRONT_URL${NC}"
 log_warn "Cache propagation may take 2-5 minutes"
