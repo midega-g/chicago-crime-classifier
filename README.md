@@ -14,7 +14,7 @@ This project implements an end-to-end machine learning pipeline that predicts th
 
 This project was built incrementally through a structured approach, with each phase building upon previous work to create a robust, production-ready system.
 
-**Technology Stack**
+**Technology Stack**:
 
 - **Backend**: ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)
 - **ML Framework**: ![XGBoost](https://img.shields.io/badge/XGBoost-FF6600?style=flat&logo=xgboost&logoColor=white) with scikit-learn pipeline integration
@@ -31,7 +31,7 @@ This project was built incrementally through a structured approach, with each ph
 
 ### Phase 2: Machine Learning Core
 
-- **[Model Development](notes/03_machine_learning_model_training_notes.md)**: XGBoost classifier implementation with strategic feature engineering and hyperparameter optimization for optimal performance. The model uses class weight balancing (scale_pos_weight=4.17) to handle the imbalanced dataset where arrests represent only 12% of incidents.
+- **[Model Development](notes/03_machine_learning_model_training_notes.md)**: XGBoost classifier implementation with strategic feature engineering and hyperparameter optimization for optimal performance. The model uses class weight balancing (`scale_pos_weight=4.17`) to handle the imbalanced dataset where arrests represent only 12% of incidents.
 - **[Production Architecture](notes/04_modular_architecture_and_production_deployment_notes.md)**: Modular code structure with separation of concerns, configuration management, and scalable design patterns
 
 ### Phase 3: Quality Assurance (Optional)
@@ -76,12 +76,12 @@ This project includes a **serverless branch** that demonstrates deploying the sa
 
 ### Prerequisites
 
-- Python 3.12+
-- UV package manager
-- Docker (for containerization)
-- AWS CLI (for cloud deployment)
-- Elastic Beanstalk CLI (for AWS deployment)
-- Pre-commit (for code quality hooks)
+Install the following if you don't have them:
+
+- [Python 3.12+](https://www.python.org/downloads/)
+- [UV](https://docs.astral.sh/uv/getting-started/installation/) (package manager)
+- [Docker](https://docs.docker.com/desktop) (for containerization)
+- [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) (for cloud deployment)
 
 ### Installation & Setup
 
@@ -123,6 +123,7 @@ uvicorn src.predict-api:app --host 0.0.0.0 --port 8000 --reload
 ```sh
 # Build and run container
 docker build -t chicago-crimes .
+
 docker run -p 8000:8000 chicago-crimes
 ```
 
@@ -130,7 +131,11 @@ docker run -p 8000:8000 chicago-crimes
 
 ```sh
 # Initialize and deploy
-eb init -p docker crime-arrest-classifier -r <your-region>
+eb init \
+    -p docker crime-arrest-classifier \
+    -r <region> \
+    --profile <profile>
+
 eb create crime-arrest-classifier-env
 ```
 
