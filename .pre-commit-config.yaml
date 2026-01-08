@@ -33,6 +33,12 @@ repos:
       - id: hadolint-docker
         args: [--ignore, DL3008, --ignore, DL3009]
 
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.47.0
+    hooks:
+    -   id: markdownlint
+        args: [ --disable=MD013, --disable=MD002 ]
+
   - repo: local
     hooks:
       - id: pylint
