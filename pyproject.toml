@@ -18,6 +18,7 @@ dev = [
     "awsebcli>=3.25.1",
     "ipykernel>=7.0.0",
     "pandas>=2.3.3",
+    "pre-commit>=4.5.1",
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
     "python-dotenv>=1.1.1",
