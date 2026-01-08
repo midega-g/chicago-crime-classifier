@@ -129,7 +129,7 @@ This command initiates the safe deletion of the environment along with the major
 However, the `eb terminate` command does not fully delete certain resources in all scenarios. The most common exception is the region-specific Elastic Beanstalk S3 bucket (named in the format `elasticbeanstalk-<region>-<account_id>`, such as `elasticbeanstalk-af-south-1-134618180303`). Elastic Beanstalk creates this bucket to store application versions, logs, configuration files, and other artifacts. To clean up this S3 bucket, first ensure it is completely empty by removing all remaining objects (including any versioned objects or delete markers):
 
 ```sh
-ACCOUNT_ID=<enter-your-account-id>
+export ACCOUNT_ID=<enter-your-account-id>
 
 aws s3 rm s3://elasticbeanstalk-af-south-1-${ACCOUNT_ID} --recursive
 ```

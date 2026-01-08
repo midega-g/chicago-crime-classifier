@@ -140,7 +140,7 @@ eb create crime-arrest-classifier-env
 ```
 
 **Resource Cleanup:**
-When finished with AWS resources, follow the cleanup instructions in [AWS Deployment Notes](notes/09_aws_elastic_beanstalk_deployment_notes.md) to avoid ongoing charges.
+When finished with AWS resources, follow the [cleanup instructions](notes/09_aws_elastic_beanstalk_deployment_notes.md#cleanup-and-termination) to avoid incurring charges.
 
 ## Core Components
 
