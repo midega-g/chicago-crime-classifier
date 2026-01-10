@@ -1,60 +1,60 @@
 {
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Effect": "Allow",
-			"Action": [
-				"elasticbeanstalk:*",
-				"s3:*",
-				"ec2:*",
-				"cloudformation:*",
-				"elasticloadbalancing:*",
-				"autoscaling:*",
-				"cloudwatch:*",
-				"cloudtrail:LookupEvents",
-				"iam:List*",
-				"iam:CreateRole",
-				"iam:Get*",
-				"iam:AttachRolePolicy",
-				"iam:CreateInstanceProfile",
-				"iam:DetachRolePolicy",
-				"iam:DeleteRole",
-				"iam:AddRoleToInstanceProfile",
-				"iam:RemoveRoleFromInstanceProfile",
-				"iam:DeleteInstanceProfile"
-			],
-			"Resource": [
-				"*"
-			]
-		},
-		{
-			"Effect": "Allow",
-			"Action": "iam:PassRole",
-			"Resource": [
-				"arn:aws:iam::076181803615:role/aws-elasticbeanstalk-service-role",
-				"arn:aws:iam::076181803615:role/aws-elasticbeanstalk-ec2-role"
-			],
-			"Condition": {
-				"StringEquals": {
-					"iam:PassedToService": [
-						"elasticbeanstalk.amazonaws.com",
-						"ec2.amazonaws.com"
-					]
-				}
-			}
-		},
-		{
-			"Effect": "Allow",
-			"Action": [
-				"iam:CreateServiceLinkedRole",
-				"iam:DeleteServiceLinkedRole",
-				"iam:GetServiceLinkedRoleDeletionStatus"
-			],
-			"Resource": [
-				"arn:aws:iam::076181803615:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
-				"arn:aws:iam::076181803615:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
-				"arn:aws:iam::076181803615:role/aws-service-role/elasticbeanstalk.amazonaws.com/*"
-			]
-		}
-	]
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "elasticbeanstalk:*",
+                "s3:*",
+                "ec2:*",
+                "cloudformation:*",
+                "elasticloadbalancing:*",
+                "autoscaling:*",
+                "cloudwatch:*",
+                "cloudtrail:LookupEvents",
+                "iam:List*",
+                "iam:CreateRole",
+                "iam:Get*",
+                "iam:AttachRolePolicy",
+                "iam:CreateInstanceProfile",
+                "iam:DetachRolePolicy",
+                "iam:DeleteRole",
+                "iam:AddRoleToInstanceProfile",
+                "iam:RemoveRoleFromInstanceProfile",
+                "iam:DeleteInstanceProfile"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": "iam:PassRole",
+            "Resource": [
+                "arn:aws:iam::<account-id>:role/aws-eb-service-role",
+                "arn:aws:iam::<account-id>:role/aws-eb-ec2-role"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "iam:PassedToService": [
+                        "elasticbeanstalk.amazonaws.com",
+                        "ec2.amazonaws.com"
+                    ]
+                }
+            }
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "iam:CreateServiceLinkedRole",
+                "iam:DeleteServiceLinkedRole",
+                "iam:GetServiceLinkedRoleDeletionStatus"
+            ],
+            "Resource": [
+                "arn:aws:iam::<account-id>:role/aws-service-role/autoscaling.amazonaws.com/AWSServiceRoleForAutoScaling",
+                "arn:aws:iam::<account-id>:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
+                "arn:aws:iam::<account-id>:role/aws-service-role/elasticbeanstalk.amazonaws.com/*"
+            ]
+        }
+    ]
 }
