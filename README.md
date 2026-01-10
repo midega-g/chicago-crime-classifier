@@ -26,27 +26,27 @@ This project was built incrementally through a structured approach, with each ph
 
 ### Phase 1: Data Foundation
 
-- **[Data Pipeline Setup](notes/01_predictive_policing_data_pipeline_notes.md)**: Established robust data ingestion from Chicago Open Data Portal using SODA API with automated retrieval and processing capabilities
-- **[Exploratory Analysis](notes/02_exploratory_data_analysis_notes.md)**: Comprehensive data exploration, quality assessment, and feature selection strategy to understand crime patterns and arrest likelihood factors
+- **[Data Pipeline Setup](notes/01_predictive_policing_data_pipeline.md)**: Established robust data ingestion from Chicago Open Data Portal using SODA API with automated retrieval and processing capabilities
+- **[Exploratory Analysis](notes/02_exploratory_data_analysis.md)**: Comprehensive data exploration, quality assessment, and feature selection strategy to understand crime patterns and arrest likelihood factors
 
 ### Phase 2: Machine Learning Core
 
-- **[Model Development](notes/03_machine_learning_model_training_notes.md)**: XGBoost classifier implementation with strategic feature engineering and hyperparameter optimization for optimal performance. The model uses class weight balancing (`scale_pos_weight=4.17`) to handle the imbalanced dataset where arrests represent only 12% of incidents.
-- **[Production Architecture](notes/04_modular_architecture_and_production_deployment_notes.md)**: Modular code structure with separation of concerns, configuration management, and scalable design patterns
+- **[Model Development](notes/03_machine_learning_model_training.md)**: XGBoost classifier implementation with strategic feature engineering and hyperparameter optimization for optimal performance. The model uses class weight balancing (`scale_pos_weight=4.17`) to handle the imbalanced dataset where arrests represent only 12% of incidents.
+- **[Production Architecture](notes/04_modular_architecture_and_production_deployment.md)**: Modular code structure with separation of concerns, configuration management, and scalable design patterns
 
 ### Phase 3: Quality Assurance (Optional)
 
-- **[Testing Framework](notes/05_testing_framework_and_quality_assurance_notes.md)**: Comprehensive test suite covering unit tests, integration tests, and model validation to ensure system reliability
+- **[Testing Framework](notes/05_testing_framework_and_quality_assurance.md)**: Comprehensive test suite covering unit tests, integration tests, and model validation to ensure system reliability
 
 ### Phase 4: Web Services
 
 - **[API Development](notes/06_web_service_deployment_of_model.md)**: FastAPI-based prediction service with RESTful JSON endpoints for seamless integration
-- **[Web Interface](notes/07_web_interface_and_api_integration_notes.md)**: User-friendly web application supporting file upload and batch predictions with intuitive interface design
+- **[Web Interface](notes/07_web_interface_and_api_integration.md)**: User-friendly web application supporting file upload and batch predictions with intuitive interface design
 
 ### Phase 5: Deployment & Operations
 
-- **[Containerization](notes/08_containerization_and_docker_deployment_notes.md)**: Docker-based deployment with multi-stage builds, optimization, and consistent environment management
-- **[Cloud Deployment](notes/09_aws_elastic_beanstalk_deployment_notes.md)**: AWS Elastic Beanstalk deployment with auto-scaling, load balancing, and managed infrastructure. Elastic Beanstalk provides the optimal balance of simplicity and scalability for rapid iteration and prototyping, offering managed infrastructure with automatic scaling while we evaluate the system's performance before transitioning to a more cost-effective serverless architecture.
+- **[Containerization](notes/08_containerization_and_docker_deployment.md)**: Docker-based deployment with multi-stage builds, optimization, and consistent environment management
+- **[Cloud Deployment](notes/09_aws_elastic_beanstalk_deployment.md)**: AWS Elastic Beanstalk deployment with auto-scaling, load balancing, and managed infrastructure. Elastic Beanstalk provides the optimal balance of simplicity and scalability for rapid iteration and prototyping, offering managed infrastructure with automatic scaling while we evaluate the system's performance before transitioning to a more cost-effective serverless architecture.
 
 The data processing pipeline transforms raw Chicago crime data through several stages:
 
@@ -66,7 +66,7 @@ The trained XGBoost model with class weight balancing demonstrates strong predic
 - **Recall**: 55% (captures 55% of actual arrest cases)
 - **F1-Score**: 0.56 (balanced precision-recall performance)
 
-The model uses balanced class weights (scale_pos_weight=4.17) to address the dataset imbalance where arrests represent only 12% of incidents. For detailed model architecture and training methodology, see [Model Development Notes](notes/03_machine_learning_model_training_notes.md).
+The model uses balanced class weights (scale_pos_weight=4.17) to address the dataset imbalance where arrests represent only 12% of incidents. For detailed model architecture and training methodology, see [Model Development Notes](notes/03_machine_learning_model_training.md).
 
 ## Serverless Implementation
 
@@ -140,7 +140,7 @@ eb create crime-arrest-classifier-env
 ```
 
 **Resource Cleanup:**
-When finished with AWS resources, follow the [cleanup instructions](notes/09_aws_elastic_beanstalk_deployment_notes.md#cleanup-and-termination) to avoid incurring charges.
+When finished with AWS resources, follow the [cleanup instructions](notes/10_aws_elastic_beanstalk_cleanup.md) to avoid incurring charges.
 
 ## Core Components
 
