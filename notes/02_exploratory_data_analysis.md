@@ -7,7 +7,7 @@ The Chicago crime dataset represents a comprehensive collection of reported inci
 The dataset includes unique identifiers such as ID and Case Number, temporal information through the Date field, geographic details ranging from broad community areas to specific block-level locations, crime classification through IUCR codes and Primary Type descriptions, and outcome indicators including the critical Arrest field that serves as our target variable. Geographic information spans multiple levels of granularity, from the finest Beat level (smallest police geographic area) up through Districts (22 total) and Community Areas (77 total), providing hierarchical spatial context for each incident. The table below shows these features and the unique values column is derived from data between 2022 and 2024 that was used to train the model.
 
 | Column Name | Description | Data Type | Unique Values |
-|-------------|-------------|-----------|---------------|
+| ------------- | ------------- | ----------- | --------------- |
 | ID | Unique identifier for the record | Number | 503,052 |
 | Case Number | Chicago Police Department RD Number | Text | 502,983 |
 | Date | Date when incident occurred | Floating Timestamp | 236,566 |
