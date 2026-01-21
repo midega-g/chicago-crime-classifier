@@ -24,22 +24,7 @@ else
 fi
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 3. Colors & Symbols (used by all scripts)
-# ────────────────────────────────────────────────────────────────────────────────
-export RED='\033[0;31m'
-export GREEN='\033[0;32m'
-export YELLOW='\033[1;33m'
-export BLUE='\033[0;34m'
-export CYAN='\033[0;36m'
-export NC='\033[0m'          # No Color
-
-export INFO=" ${CYAN}info${NC}"
-export SUCCESS=" ${GREEN}✓${NC}"
-export WARN=" ${YELLOW}warn${NC}"
-export ERROR=" ${RED}error${NC}"
-
-# ────────────────────────────────────────────────────────────────────────────────
-# 4. Project-wide constants (override via .env when needed)
+# 3. Project-wide constants (override via .env when needed)
 # ────────────────────────────────────────────────────────────────────────────────
 
 # AWS Core
@@ -80,36 +65,22 @@ export DISTRIBUTION_COMMENT="Chicago Crimes Prediction App"
 export ADMIN_EMAIL="${ADMIN_EMAIL}"
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 5. Helper function: Run AWS command with better error reporting
+# 4. Colors & Symbols (used by all scripts)
 # ────────────────────────────────────────────────────────────────────────────────
-run_aws() {
-    local cmd=("$@")
-    # Insert --profile after 'aws' command
-    if [[ "${cmd[0]}" == "aws" ]]; then
-        cmd=("${cmd[0]}" "--profile" "$AWS_PROFILE" "${cmd[@]:1}")
-    fi
-    echo -e "${INFO} ${cmd[*]}"
+export RED='\033[0;31m'
+export GREEN='\033[0;32m'
+export YELLOW='\033[1;33m'
+export BLUE='\033[0;34m'
+export CYAN='\033[0;36m'
+export NC='\033[0m'          # No Color
 
-    # Capture both stdout and stderr
-    local output
-    local exit_code
-    output=$("${cmd[@]}" 2>&1)
-    exit_code=$?
-
-    if [[ $exit_code -eq 0 ]]; then
-        # Success - do not echo output to keep logs clean
-        return 0
-    else
-        # Failure - show the error
-        echo -e "${ERROR} Command failed: ${cmd[*]}" >&2
-        echo -e "${ERROR} Error output:" >&2
-        echo "$output" >&2
-        return $exit_code
-    fi
-}
+export INFO=" ${CYAN}info${NC}"
+export SUCCESS=" ${GREEN}✓${NC}"
+export WARN=" ${YELLOW}warn${NC}"
+export ERROR=" ${RED}error${NC}"
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 6. Logging helper functions
+# 5. Logging helper functions
 # ────────────────────────────────────────────────────────────────────────────────
 
 log_info() {
@@ -149,24 +120,7 @@ log_summary() {
 }
 
 # ────────────────────────────────────────────────────────────────────────────────
-# 7. Show loaded configuration (useful for debugging)
-# ────────────────────────────────────────────────────────────────────────────────
-
-print_config_summary() {
-    log_section "Configuration Loaded"
-    echo -e "  ${CYAN}Profile:${NC}     ${YELLOW}${AWS_PROFILE}${NC}"
-    echo -e "  ${CYAN}Region:${NC}      ${YELLOW}${REGION}${NC}"
-    echo -e "  ${CYAN}Account ID:${NC}  ${YELLOW}${ACCOUNT_ID}${NC}"
-    echo -e "  ${CYAN}Static Bucket:${NC}   ${YELLOW}${STATIC_BUCKET}${NC}"
-    echo -e "  ${CYAN}Upload Bucket:${NC}   ${YELLOW}${UPLOAD_BUCKET}${NC}"
-    echo ""
-}
-
-# Uncomment next line if you want auto-print when sourcing (optional)
-# print_config_summary
-
-# ────────────────────────────────────────────────────────────────────────────────
-# 8. Helper functions for retrieving dynamic AWS resource values
+# 6. Helper functions for retrieving dynamic AWS resource values
 # ────────────────────────────────────────────────────────────────────────────────
 
 # Get ECR repository URI
