@@ -1,41 +1,41 @@
+# Static Website Deployment
 
-# Static Website Deployment – Implementation Notes
+The `02-deploy-static-website.sh` script handles the deployment of frontend assets to Amazon S3 with sophisticated caching strategies and content-type management. The script implements a multi-stage deployment approach that optimizes browser caching while ensuring critical files like HTML and JSON remain fresh for immediate updates.
 
-The `02-deploy-static-website.sh` script is responsible for deploying the frontend assets of the Chicago Crimes application to Amazon S3. It takes a local directory containing static website files and synchronizes its contents with a designated S3 bucket in a controlled, repeatable, and safe manner. Rather than creating infrastructure, the script assumes that the required S3 bucket already exists and focuses on validating prerequisites and synchronizing static assets in a controlled way.
+The script is designed to work with private S3 buckets that will be accessed through CloudFront, implementing cache-control headers that optimize both performance and update propagation across the CDN infrastructure.
 
-## Execution Safety and Configuration
+## Loading Shared Configuration and Enforcing Safe Execution
 
-The script begins by enabling strict Bash execution rules:
+The script begins by enabling strict Bash execution modes and loading shared configuration.
 
 ```bash
 set -euo pipefail
+
+source "$(dirname "$0")/00-config.sh" || {
+  echo "Failed to load config" >&2
+  exit 1
+}
 ```
 
-This ensures that the script exits immediately if any command fails, if an undefined variable is used, or if an error occurs inside a pipeline. These safeguards prevent partial deployments and make failures visible early.
+The `set -euo pipefail` directive ensures that the script exits immediately if any command fails, if an undefined variable is used, or if a pipeline command fails silently. This prevents partial deployments that could leave the website in an inconsistent state.
 
-Configuration values are loaded from a shared configuration file:
+Sourcing `00-config.sh` provides access to centralized configuration including bucket names, AWS credentials, and logging utilities. The error handling ensures the script cannot proceed without proper configuration.
 
-```bash
-source "$(dirname "$0")/00-config.sh"
-```
+## Dry-Run Mode Support
 
-This file provides values such as the AWS region, S3 bucket name, and logging helpers. Separating configuration from logic allows the same script to be reused across environments without modification.
-
-## Dry-Run Support
-
-The script supports a dry-run mode that simulates deployment actions without making changes in AWS:
+The script supports non-destructive testing through an optional dry-run mode.
 
 ```bash
 DRY_RUN="${DRY_RUN:-false}"
 ```
 
-When dry-run mode is enabled, all S3 operations are executed in simulation mode. This is especially useful for validating changes in CI/CD pipelines or testing updates to the deployment process without risking data loss.
+When `DRY_RUN=true` is set, all AWS operations are executed in simulation mode, showing what would be changed without actually uploading or deleting files. This is particularly valuable for CI/CD pipelines and testing deployment changes.
 
-## Preflight Validation
+## Comprehensive Preflight Validation
 
-Before deploying any files, the script performs several checks to ensure that the environment is correctly configured.
+Before any deployment operations, the script performs thorough validation of prerequisites.
 
-It first validates that the project root variable is defined:
+### Project Root Validation
 
 ```bash
 if [[ -z "${PROJECT_ROOT:-}" ]]; then
@@ -44,7 +44,9 @@ if [[ -z "${PROJECT_ROOT:-}" ]]; then
 fi
 ```
 
-It then verifies that the static website directory exists locally:
+The `[[ -z "${PROJECT_ROOT:-}" ]]` test checks if the PROJECT_ROOT variable is unset or empty. The `:-` parameter expansion provides an empty string as a fallback if the variable is unset, preventing the `-u` flag from causing script termination during the test itself.
+
+### Static Web Directory Validation
 
 ```bash
 STATIC_WEB_DIR="$PROJECT_ROOT/aws/static-web"
@@ -55,7 +57,9 @@ if [[ ! -d "$STATIC_WEB_DIR" ]]; then
 fi
 ```
 
-Finally, the script confirms that the target S3 bucket exists in AWS:
+The `[[ ! -d "$STATIC_WEB_DIR" ]]` test verifies that the source directory exists and is actually a directory. This prevents attempting to deploy from a non-existent or invalid source location.
+
+### S3 Bucket Existence Verification
 
 ```bash
 if ! aws s3api head-bucket --bucket "$STATIC_BUCKET" 2>/dev/null; then
@@ -64,117 +68,243 @@ if ! aws s3api head-bucket --bucket "$STATIC_BUCKET" 2>/dev/null; then
 fi
 ```
 
-These checks ensure that deployment only proceeds when all prerequisites are satisfied, reducing the risk of silent failures.
+The `aws s3api head-bucket` command checks bucket existence without listing contents:
 
-## Deployment Context and Operator Feedback
+- `--bucket "$STATIC_BUCKET"` - Specifies the target bucket from configuration
+- `2>/dev/null` - Suppresses error output for cleaner script execution
+- The `!` operator inverts the exit code, so the condition triggers if the bucket doesn't exist
 
-Before any files are uploaded, the script logs the deployment context to make it clear what will happen:
-
-```bash
-log_info "Deployment context:"
-log_info "  Source directory : $STATIC_WEB_DIR"
-log_info "  Target bucket    : s3://$STATIC_BUCKET/"
-log_info "  AWS region       : $REGION"
-log_info "  DRY_RUN mode     : $DRY_RUN"
-```
-
-This feedback is particularly helpful when deploying to multiple environments or reviewing CI logs.
-
-For additional transparency, the script logs how many files will be considered for deployment:
+### File Count Validation
 
 ```bash
 FILE_COUNT=$(find "$STATIC_WEB_DIR" -type f | wc -l | tr -d ' ')
-log_info "Preparing to deploy $FILE_COUNT static files"
+if [[ "$FILE_COUNT" -eq 0 ]]; then
+  log_error "No files found in $STATIC_WEB_DIR"
+  exit 1
+fi
 ```
 
-This acts as a lightweight integrity check and helps detect unexpected changes in the source directory.
+This validation ensures there are actually files to deploy:
 
-## Synchronizing Static Assets to S3
+- `find "$STATIC_WEB_DIR" -type f` - Finds all regular files in the directory
+- `wc -l` - Counts the number of lines (files)
+- `tr -d ' '` - Removes any whitespace from the count
+- The numeric comparison `[[ "$FILE_COUNT" -eq 0 ]]` checks for empty directories
 
-The bulk of the deployment is handled by the `aws s3 sync` command:
+## Deployment Context Logging
+
+The script provides comprehensive deployment context for operational transparency.
 
 ```bash
-run_aws aws s3 sync "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
-  --delete \
-  --cache-control "max-age=86400" \
+log_info "Deployment context:"
+log_info "  Source directory : ${BLUE}$STATIC_WEB_DIR${NC}"
+log_info "  Target bucket    : ${BLUE}s3://$STATIC_BUCKET/${NC}"
+log_info "  AWS region       : ${YELLOW}$REGION${NC}"
+log_info "  AWS profile      : ${YELLOW}$AWS_PROFILE${NC}"
+log_info "  DRY_RUN mode     : ${GREEN}$DRY_RUN${NC}"
+log_info "  Files to deploy  : ${GREEN}$FILE_COUNT${NC}"
+```
+
+This context logging helps with:
+
+- Debugging deployment issues by showing exact source and target locations
+- Verifying correct AWS profile and region usage
+- Confirming dry-run mode status before execution
+- Providing file count as a sanity check
+
+## Multi-Stage S3 Sync Strategy
+
+The deployment uses a sophisticated multi-stage approach to optimize caching behavior for different file types.
+
+### Sync Flags Configuration
+
+```bash
+SYNC_FLAGS=(
+  --delete
+  --profile "$AWS_PROFILE"
   --region "$REGION"
+)
+
+if [[ "$DRY_RUN" == "true" ]]; then
+  SYNC_FLAGS+=(--dryrun)
+fi
 ```
 
-This command ensures that the contents of the S3 bucket match the local directory. Files removed locally are also removed from S3, keeping the deployed state consistent.
+The sync flags array provides consistent configuration across all sync operations:
 
-When dry-run mode is enabled, the same command is executed with the `--dryrun` flag:
+- `--delete` - Removes files from S3 that no longer exist locally, maintaining exact synchronization
+- `--profile "$AWS_PROFILE"` - Specifies the AWS CLI profile for authentication
+- `--region "$REGION"` - Ensures operations target the correct AWS region
+- `--dryrun` - Added conditionally for simulation mode
+
+### Stage 1: Static Assets with Long-Term Caching
 
 ```bash
-SYNC_FLAGS+=(--dryrun)
+aws s3 sync "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
+  "${SYNC_FLAGS[@]}" \
+  --cache-control "max-age=31536000, immutable" \
+  --exclude "*.html" \
+  --exclude "*.json"
 ```
 
-This causes AWS to report what would change without actually uploading or deleting any files.
+This first sync handles static assets (CSS, JS, images) with aggressive caching:
 
-## Explicit Content-Type Handling
+- `"$STATIC_WEB_DIR/"` - Source directory with trailing slash for proper sync behavior
+- `"s3://$STATIC_BUCKET/"` - Target S3 bucket with trailing slash
+- `"${SYNC_FLAGS[@]}"` - Expands the flags array as separate arguments
+- `--cache-control "max-age=31536000, immutable"` - Sets 1-year cache with immutable flag
+- `--exclude "*.html"` and `--exclude "*.json"` - Excludes files that need different caching
 
-To avoid issues caused by incorrect MIME type inference, the script explicitly sets content types for key file categories.
+The `immutable` directive tells browsers and CDNs that these files will never change, enabling maximum caching efficiency.
 
-For the main HTML file, a short cache duration is applied to allow rapid updates:
+### Stage 2: HTML Files with No-Cache Policy
 
 ```bash
-aws s3 cp index.html s3://$STATIC_BUCKET/index.html \
-  --content-type "text/html" \
-  --cache-control "max-age=300"
+if compgen -G "$STATIC_WEB_DIR/*.html" > /dev/null; then
+  aws s3 sync "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
+    "${SYNC_FLAGS[@]}" \
+    --cache-control "no-cache, no-store, must-revalidate" \
+    --content-type "text/html" \
+    --exclude "*" \
+    --include "*.html"
+fi
 ```
 
-JavaScript files are uploaded with the correct content type and a longer cache duration:
+HTML files receive special treatment for immediate updates:
+
+- `compgen -G "$STATIC_WEB_DIR/*.html" > /dev/null` - Tests if HTML files exist before processing
+- `--cache-control "no-cache, no-store, must-revalidate"` - Prevents all caching
+- `--content-type "text/html"` - Explicitly sets MIME type
+- `--exclude "*" --include "*.html"` - Processes only HTML files
+
+The no-cache policy ensures that HTML changes are immediately visible to users.
+
+### Stage 3: JSON Files with No-Cache Policy
 
 ```bash
-aws s3 cp "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
-  --recursive \
-  --exclude "*" \
-  --include "*.js" \
-  --content-type "application/javascript" \
-  --cache-control "max-age=86400"
+if compgen -G "$STATIC_WEB_DIR/*.json" > /dev/null; then
+  aws s3 sync "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
+    "${SYNC_FLAGS[@]}" \
+    --cache-control "no-cache, no-store, must-revalidate" \
+    --content-type "application/json" \
+    --exclude "*" \
+    --include "*.json"
+fi
 ```
 
-CSS files are handled similarly:
+JSON files (likely configuration files) also receive no-cache treatment to ensure configuration changes take effect immediately.
+
+## Explicit Content-Type Corrections
+
+The script performs additional passes to ensure correct MIME types for specific file categories.
+
+### JavaScript Files
 
 ```bash
-aws s3 cp "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
-  --recursive \
-  --exclude "*" \
-  --include "*.css" \
-  --content-type "text/css" \
-  --cache-control "max-age=86400"
+if compgen -G "$STATIC_WEB_DIR/*.js" > /dev/null; then
+  aws s3 cp "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
+    --recursive \
+    --exclude "*" \
+    --include "*.js" \
+    --content-type "application/javascript" \
+    --cache-control "max-age=31536000, immutable" \
+    --profile "$AWS_PROFILE" \
+    --region "$REGION" \
+    ${DRY_RUN:+--dryrun} \
+    >/dev/null
+fi
 ```
 
-This explicit handling ensures predictable browser behavior and prepares the site for CDN delivery.
+JavaScript files receive explicit content-type handling:
 
-## Completion and Next Steps
+- `aws s3 cp` with `--recursive` - Copies files recursively
+- `--exclude "*" --include "*.js"` - Processes only JavaScript files
+- `--content-type "application/javascript"` - Sets correct MIME type
+- `${DRY_RUN:+--dryrun}` - Conditional parameter expansion adds `--dryrun` only if DRY_RUN is set
+- `>/dev/null` - Suppresses verbose output
 
-After deployment, the script logs a success message and indicates where the files were uploaded:
+### CSS Files
+
+```bash
+if compgen -G "$STATIC_WEB_DIR/*.css" > /dev/null; then
+  aws s3 cp "$STATIC_WEB_DIR/" "s3://$STATIC_BUCKET/" \
+    --recursive \
+    --exclude "*" \
+    --include "*.css" \
+    --content-type "text/css" \
+    --cache-control "max-age=31536000, immutable" \
+    --profile "$AWS_PROFILE" \
+    --region "$REGION" \
+    ${DRY_RUN:+--dryrun} \
+    >/dev/null
+fi
+```
+
+CSS files receive similar treatment with the appropriate `text/css` MIME type.
+
+## Deployment Verification
+
+For non-dry-run deployments, the script verifies successful upload.
+
+```bash
+if [[ "$DRY_RUN" == "false" ]]; then
+  UPLOADED_COUNT=$(aws s3 ls "s3://$STATIC_BUCKET/" --recursive --profile "$AWS_PROFILE" | wc -l | tr -d ' ')
+  
+  if [[ "$UPLOADED_COUNT" -gt 0 ]]; then
+    log_success "Deployment verified: $UPLOADED_COUNT files in bucket"
+  else
+    log_warn "Warning: Bucket appears empty after deployment"
+  fi
+fi
+```
+
+The verification process:
+
+- `aws s3 ls "s3://$STATIC_BUCKET/" --recursive` - Lists all objects in the bucket
+- `wc -l | tr -d ' '` - Counts files and removes whitespace
+- Compares the count to ensure files were actually uploaded
+
+## Completion Summary and Operational Guidance
+
+The script concludes with comprehensive operational information.
 
 ```bash
 log_success "Static website deployment completed successfully!"
-log_info "Files deployed to: s3://$STATIC_BUCKET/"
+log_info "Files deployed to: ${BLUE}s3://$STATIC_BUCKET/${NC}"
+
+if [[ "$DRY_RUN" == "true" ]]; then
+  log_warn "DRY_RUN was enabled — no actual changes were made"
+  log_info "Run without DRY_RUN=true to perform actual deployment"
+fi
+
+log_info "${CYAN}Cache Strategy:${NC}"
+log_info "  • Static assets (JS/CSS/images): 1 year cache (immutable)"
+log_info "  • HTML/JSON files: no-cache (always fresh)"
+
+log_warn "Website is accessible only via CloudFront distribution (private bucket)"
+log_info "${CYAN}Optional:${NC} Update ${GREEN}API_GATEWAY_URL${NC} in ${GREEN}script.js${NC} with your actual API Gateway endpoint"
 ```
 
-If dry-run mode was used, the script clearly states that no changes were made:
+The completion summary provides:
 
-```bash
-log_warn "DRY_RUN was enabled — no actual changes were made"
-```
+- Clear confirmation of deployment success
+- Reminder about dry-run mode if applicable
+- Documentation of the caching strategy implemented
+- Important architectural notes about CloudFront access
+- Guidance for next configuration steps
 
-The script also provides guidance about the broader architecture, reminding operators that the site is intended to be accessed through CloudFront and that frontend configuration values must be updated to point to the correct backend endpoints.
+## How to Run the Script
 
-## Running the Script
-
-For a standard deployment, the script is run as follows:
+To execute a standard deployment:
 
 ```bash
 ./02-deploy-static-website.sh
 ```
 
-To simulate the deployment without making any changes in AWS, dry-run mode can be enabled:
+To simulate deployment without making changes:
 
 ```bash
 DRY_RUN=true ./02-deploy-static-website.sh
 ```
 
-This dual execution model allows the same script to be used safely in both local development and automated deployment pipelines.
+The script's idempotent design allows safe re-execution, and the multi-stage caching strategy ensures optimal performance while maintaining the ability to push immediate updates when needed.
