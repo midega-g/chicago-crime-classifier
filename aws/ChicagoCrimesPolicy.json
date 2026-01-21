@@ -2,247 +2,93 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "S3PermissionsForStaticAndUploadBuckets",
-      "Effect": "Allow",
-      "Action": [
-        "s3:CreateBucket",
-        "s3:ListBucket",
-        "s3:GetBucketLocation",
-        "s3:ListBucket",
-        "s3:PutBucketOwnershipControls",
-        "s3:PutBucketPublicAccessBlock",
-        "s3:PutLifecycleConfiguration",
-        "s3:PutBucketVersioning",
-        "s3:PutBucketCors",
-        "s3:PutBucketPolicy",
-        "s3:PutObject",
-        "s3:PutObjectAcl",
-        "s3:GetObject",
-        "s3:DeleteObject",
-        "s3:ListBucketMultipartUploads",
-        "s3:AbortMultipartUpload",
-        "s3:ListMultipartUploadParts",
-        "s3:ListBucketVersions",
-        "s3:PutBucketNotification"
-      ],
-      "Resource": [
-        "arn:aws:s3:::chicago-crimes-web-bucket",
-        "arn:aws:s3:::chicago-crimes-web-bucket/*",
-        "arn:aws:s3:::chicago-crimes-uploads-bucket",
-        "arn:aws:s3:::chicago-crimes-uploads-bucket/*"
-      ]
-    },
-    {
-      "Sid": "CloudFrontManagement",
-      "Effect": "Allow",
-      "Action": [
-        "cloudfront:ListDistributions",
-        "cloudfront:GetDistribution",
-        "cloudfront:CreateDistribution",
-        "cloudfront:ListOriginAccessControls",
-        "cloudfront:CreateOriginAccessControl",
-        "cloudfront:GetDistributionConfig"
-      ],
-      "Resource": [
-        "arn:aws:cloudfront::076181803615:distribution/*",
-        "arn:aws:cloudfront::076181803615:origin-access-control/*"
-      ]
-    },
-    {
-      "Sid": "LogsReadAndConsoleVisibility",
-      "Effect": "Allow",
-      "Action": [
-        "logs:DescribeLogGroups",
-        "logs:DescribeLogStreams",
-        "logs:GetLogEvents",
-        "logs:FilterLogEvents",
-        "logs:DescribeAccountPolicies",
-        "logs:GetDataProtectionPolicy"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Sid": "RestrictedPassRoleForLambda",
-      "Effect": "Allow",
-      "Action": [
-        "iam:PassRole",
-        "iam:GetRole"
-      ],
-      "Resource": "arn:aws:iam::076181803615:role/chicago-crimes-lambda-execution-role",
-      "Condition": {
-        "StringLike": {
-          "iam:PassedToService": "lambda.amazonaws.com"
-        }
-      }
-    },
-    {
-      "Sid": "APIGatewayConsoleView",
-      "Effect": "Allow",
-      "Action": [
-        "apigateway:GET"
-      ],
-      "Resource": "arn:aws:apigateway:*::/restapis"
-    },
-    {
-      "Sid": "APIGatewayManagement",
-      "Effect": "Allow",
-      "Action": [
-        "apigateway:GET",
-        "apigateway:POST",
-        "apigateway:PUT",
-        "apigateway:DELETE"
-      ],
-      "Resource": [
-        "arn:aws:apigateway:*::/restapis",
-        "arn:aws:apigateway:*::/restapis/*"
-      ]
-    },
-    {
-      "Sid": "DynamoDBTableManagement",
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:CreateTable",
-        "dynamodb:DescribeTable",
-        "dynamodb:ListTables",
-        "dynamodb:DescribeLimits",
-        "dynamodb:UpdateTable",
-        "dynamodb:PutItem",
-        "dynamodb:GetItem",
-        "dynamodb:Query",
-        "dynamodb:Scan",
-        "dynamodb:DeleteTable"
-      ],
-      "Resource": "arn:aws:dynamodb:*:076181803615:table/chicago-crimes-dynamodb-results"
-    },
-    {
-      "Sid": "ECRRepositoryManagement",
-      "Effect": "Allow",
-      "Action": [
-        "ecr:CreateRepository",
-        "ecr:DescribeRepositories",
-        "ecr:PutLifecyclePolicy",
-        "ecr:ListImages",
-        "ecr:DescribeImages",
-        "ecr:BatchDeleteImage",
-        "ecr:BatchGetImage",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr-public:GetAuthorizationToken",
-        "ecr:GetAuthorizationToken"
-      ],
-      "Resource": "arn:aws:ecr:*:076181803615:repository/chicago-crimes-lambda-ecr"
-    },
-    {
-      "Sid": "IAMCreateAndAttach",
-      "Effect": "Allow",
-      "Action": [
-        "iam:CreateRole",
-        "iam:PutRolePolicy",
-        "iam:AttachRolePolicy",
-        "iam:CreatePolicy",
-        "iam:GetRole",
-        "iam:TagRole"
-      ],
-      "Resource": "arn:aws:iam::076181803615:role/chicago-crimes-lambda-execution-role"
-    },
-    {
-      "Sid": "SESManagement",
-      "Effect": "Allow",
-      "Action": [
-        "ses:GetIdentityVerificationAttributes",
-        "ses:VerifyEmailIdentity",
-        "ses:GetAccountSendingEnabled",
-        "ses:GetSendQuota",
-        "ses:SendEmail",
-        "ses:SendRawEmail"
-      ],
-      "Resource": "arn:aws:cloudfront::076181803615:distribution/*"
-    },
-    {
-      "Sid": "STSAndAutoScalingHelpers",
-      "Effect": "Allow",
-      "Action": [
-        "sts:GetServiceBearerToken",
-        "application-autoscaling:DescribeScalingPolicies",
-        "application-autoscaling:DeregisterScalableTarget",
-        "application-autoscaling:RegisterScalableTarget"
-      ],
-      "Resource": "arn:aws:lambda:*:076181803615:function/chicago-crimes-lambda-predictor"
-    },
-    {
-      "Sid": "CloudFrontInvalidation",
-      "Effect": "Allow",
-      "Action": [
-        "cloudfront:CreateInvalidation",
-        "cloudfront:GetInvalidation",
-        "cloudfront:ListInvalidations"
-      ],
-      "Resource": [
-        "arn:aws:lambda:*:076181803615:function/chicago-crimes-lambda-predictor",
-        "arn:aws:apigateway:*::/restapis/*",
-        "arn:aws:dynamodb:*:076181803615:table/chicago-crimes-dynamodb-results",
-        "arn:aws:logs:*:076181803615:log-group:/aws/lambda/chicago-crimes-lambda-predictor",
-        "arn:aws:cloudfront::076181803615:distribution/*",
-        "arn:aws:cloudfront::076181803615:origin-access-control/*",
-        "arn:aws:s3:::chicago-crimes-web-bucket",
-        "arn:aws:s3:::chicago-crimes-web-bucket/*",
-        "arn:aws:s3:::chicago-crimes-uploads-bucket",
-        "arn:aws:s3:::chicago-crimes-uploads-bucket/*",
-        "arn:aws:ecr:*:076181803615:repository/chicago-crimes-lambda-ecr",
-        "arn:aws:iam::076181803615:role/chicago-crimes-lambda-execution-role"
-      ]
-    },
-    {
-      "Sid": "LambdaPolicyRead",
-      "Effect": "Allow",
-      "Action": [
-        "lambda:GetPolicy",
-        "lambda:AddPermission"
-      ],
-      "Resource": "arn:aws:lambda:*:076181803615:function/chicago-crimes-lambda-predictor"
-    },
-    {
-      "Sid": "CleanupPermissions",
-      "Effect": "Allow",
-      "Action": [
-        "lambda:DeleteFunction",
-        "lambda:RemovePermission",
-        "apigateway:DELETE",
-        "dynamodb:DeleteTable",
-        "logs:DeleteLogGroup",
-        "cloudfront:GetDistributionConfig",
-        "cloudfront:UpdateDistribution",
-        "cloudfront:DeleteDistribution",
-        "cloudfront:GetDistribution",
-        "cloudfront:ListOriginAccessControls",
-        "cloudfront:GetOriginAccessControl",
-        "cloudfront:DeleteOriginAccessControl",
-        "s3:ListBucketVersions",
-        "s3:DeleteObject",
-        "s3:DeleteBucket",
-        "s3:ListBucket",
-        "ecr:DeleteRepository",
-        "iam:DeleteRole",
-        "iam:DeleteRolePolicy",
-        "iam:DetachRolePolicy",
-        "iam:ListRolePolicies"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Sid": "LambdaManagement",
-      "Effect": "Allow",
-      "Action": [
-        "lambda:GetFunction",
-        "lambda:CreateFunction",
-        "lambda:UpdateFunctionCode",
-        "lambda:UpdateFunctionConfiguration",
-        "lambda:GetFunctionConfiguration",
-        "lambda:AddPermission",
-        "lambda:ListFunctions",
-        "lambda:ListTags",
-        "lambda:TagResource"
-      ],
-      "Resource": "*"
-    }
+			"Effect": "Allow",
+			"Action": [
+				"s3:*",
+				"s3-object-lambda:*"
+			],
+			"Resource": [
+				"*"
+			]
+		},
+		{
+			"Effect": "Allow",
+			"Action": "cloudfront:*",
+			"Resource": [
+				"*"
+			]
+		},
+		{
+			"Effect": "Allow",
+			"Action": [
+				"logs:*",
+				"apigateway:*"
+			],
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": "dynamodb:*",
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": [
+				"ecr:*",
+				"ecr-public:GetAuthorizationToken"
+			],
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": [
+				"iam:get*",
+				"iam:put*",
+				"iam:list*",
+				"iam:createrole",
+				"iam:attach*",
+				"iam:TagRole"
+			],
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": "iam:passRole",
+			"Resource": [
+				"arn:aws:iam::<account-id>:role/chicago-crimes-lambda-execution-role"
+			]
+		},
+		{
+			"Effect": "Allow",
+			"Action": "lambda:*",
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": "ses:*",
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": [
+				"application-autoscaling:*",
+				"sts:*"
+			],
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": [
+				"cloudwatch:*"
+			],
+			"Resource": "*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": [
+				"logs:*"
+			],
+			"Resource": "*"
+		}
   ]
 }
